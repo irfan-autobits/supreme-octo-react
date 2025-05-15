@@ -1,0 +1,62 @@
+.
+|-- .bolt
+|   |-- config.json
+|   `-- prompt
+|-- .env
+|-- eslint.config.js
+|-- .gitignore
+|-- index.html
+|-- package.json
+|-- package-lock.json
+|-- postcss.config.js
+|-- src
+|   |-- App.tsx
+|   |-- auth
+|   |   |-- AuthContext.tsx
+|   |   |-- components
+|   |   |   |-- Login.tsx
+|   |   |   |-- Logout.tsx
+|   |   |   `-- Signup.tsx
+|   |   |-- RequireAuth.tsx
+|   |   `-- useAuth.ts
+|   |-- components
+|   |   |-- Layout
+|   |   |   |-- Layout.tsx
+|   |   |   `-- Sidebar.tsx
+|   |   `-- UI
+|   |       |-- Button.tsx
+|   |       |-- Card.tsx
+|   |       |-- DatePicker.tsx
+|   |       |-- Input.tsx
+|   |       |-- Logo.tsx
+|   |       |-- Modal.tsx
+|   |       |-- Select.tsx
+|   |       `-- Table.tsx
+|   |-- features
+|   |   |-- Cameras
+|   |   |   |-- AddCameraModal.tsx
+|   |   |   `-- CameraCard.tsx
+|   |   |-- Persons
+|   |   |   `-- MeetingCard.tsx
+|   |   `-- Subjects
+|   |       `-- AddSubjectModal.tsx
+|   |-- index.css
+|   |-- main.tsx
+|   |-- pages
+|   |   |-- Analysis.tsx
+|   |   |-- CameraManager.tsx
+|   |   |-- Dashboard.tsx
+|   |   |-- DetectionTable.tsx
+|   |   |-- PersonTracker.tsx
+|   |   `-- SubjectManager.tsx
+|   |-- routes.tsx
+|   |-- utils
+|   |   `-- mockData.ts
+|   `-- vite-env.d.ts
+|-- tailwind.config.js
+|-- tsconfig.app.json
+|-- tsconfig.json
+|-- tsconfig.node.json
+`-- vite.config.ts
+
+14 directories, 46 files

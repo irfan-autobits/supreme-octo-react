@@ -1,40 +1,34 @@
-// src/routes.ts (or src/routes.tsx)
+// src/routes.tsx
 import React from 'react';
 import { Navigate, RouteObject } from 'react-router-dom';
 
-// Import your components (make sure these are .tsx files with proper types)
-import Logout from './components/user_auth/logout';
-import Login from './components/user_auth/login';
-import Signup from './components/user_auth/sign_up';
-import CameraManager from './components/camera_management/CameraManager';
-import AnalysisTable from './components/analy_tab/AnalysisTable';
-import StatsPage from './components/stats/StatsPage';
-import Tracker from './components/journey/Tracker';
-import SubjectMan from './components/admin/SubjectMan';
-import SettingsPage from './components/settings/Settings';
+import Login from './auth/components/Login';
+import Signup from './auth/components/Signup';
+import Logout from './auth/components/Logout';
 
-// Define a type for your route objects
-interface AppRouteObject extends RouteObject {
+import Dashboard from './pages/Dashboard';
+import Analysis from './pages/Analysis';
+import CameraManager from './pages/CameraManager';
+import PersonTracker from './pages/PersonTracker';
+import SubjectManager from './pages/SubjectManager';
+
+// Define a route object type
+export type AppRouteObject = RouteObject & {
   path: string;
   element: React.ReactNode;
-  // Add any other properties your route objects have (e.g., exact)
-}
+};
 
-const publicRoutes: AppRouteObject[] = [
-  { path: "/logout", element: <Logout /> },
-  { path: "/login", element: <Login /> },
-  { path: "/register", element: <Signup /> },
-  // Note: The catch-all "*" route is handled in App.tsx
+export const publicRoutes: AppRouteObject[] = [
+  { path: '/login', element: <Login /> },
+  { path: '/register', element: <Signup /> },
+  { path: '/logout', element: <Logout /> },
 ];
 
-const privateRoutes: AppRouteObject[] = [
-  { path: "", element: <Navigate to="/cameras" /> },
-  { path: "cameras", element: <CameraManager /> },
-  { path: "analysis", element: <AnalysisTable /> },
-  { path: "stats", element: <StatsPage /> },
-  { path: "tracker", element: <Tracker /> },
-  { path: "subjectman", element: <SubjectMan /> },
-  { path: "settings", element: <SettingsPage /> },
+export const privateRoutes: AppRouteObject[] = [
+  { path: '/', element: <Navigate to="/camera-manager" replace /> },
+  { path: '/dashboard', element: <Dashboard /> },
+  { path: '/analysis', element: <Analysis /> },
+  { path: '/camera-manager', element: <CameraManager /> },
+  { path: '/person-tracker', element: <PersonTracker /> },
+  { path: '/subject-manager', element: <SubjectManager /> },
 ];
-
-export { publicRoutes, privateRoutes };
