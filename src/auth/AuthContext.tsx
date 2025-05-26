@@ -11,13 +11,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const stored = localStorage.getItem('token');
-    if (stored) setToken(stored);
-  }, []);
+  const [token, setToken] = useState<string | null>(
+    () => localStorage.getItem('token')
+  );
 
   const login = (newToken: string) => {
     localStorage.setItem('token', newToken);

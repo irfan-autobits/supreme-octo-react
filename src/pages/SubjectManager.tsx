@@ -1,22 +1,61 @@
-import React, { useState } from 'react';
-import { mockSubjects } from '../utils/mockData';
+// project/src/pages/SubjectManager.tsx
+import React, { useState, useEffect } from 'react';
+// import { mockSubjects } from '../utils/mockData';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import Button from '../components/UI/Button';
 import Input from '../components/UI/Input';
 import Table from '../components/UI/Table';
 import Modal from '../components/UI/Modal';
 import AddSubjectModal from '../features/Subjects/AddSubjectModal';
+import AddSingleImage from '../features/Subjects/AddImg';
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) throw new Error("VITE_API_URL is not defined");
+
+type ImageObj = { id: string; url: string };
+type Subject = {
+  id: string;                 // uuid
+  images: ImageObj[];
+  subject_name: string;
+  age: number;
+  gender: string;
+  email: string;
+  phone: string;
+  aadhar: string;
+  added_date: string;         // ISO string from backend
+};
 
 const SubjectManager: React.FC = () => {
-  const [subjects, setSubjects] = useState(mockSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+
+  const fetchSubjects = () => {
+    fetch(`${API_URL}/api/subject_list`)
+      .then(response => response.json())
+      .then(data => {
+        setSubjects(data.subjects || []);
+        console.log("Fetched subjects:", JSON.stringify(data.subjects, null, 2));
+
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching subjects:", error);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchSubjects();
+  }, [refreshTrigger]);
 
   const filteredSubjects = subjects.filter(
     (subject) =>
-      subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subject.subject_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       subject.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -36,13 +75,48 @@ const SubjectManager: React.FC = () => {
   const handleAddSubject = (subject: any) => {
     setSubjects([...subjects, { ...subject, id: subjects.length + 1, dateAdded: new Date().toLocaleString() }]);
     setIsModalOpen(false);
+    setRefreshTrigger(prev => prev + 1);
+
   };
 
-  const handleRemoveSubject = (id: number) => {
-    setSubjects(subjects.filter((subject) => subject.id !== id));
+    const handleRemoveSubject = async (id: string) => {
+    if (!window.confirm("Do you want to Delete this Subject?")) return;
+    // if (!window.confirm("Are you sure?")) return;
+    // if (!window.confirm("ARE YOU REALLY REALLY SURE?")) return;
+    // if (!window.confirm("This Action cant't be undone do you still want to do this?")) return;
+    try {
+      // Call your backend delete endpoint
+      const response = await fetch(`${API_URL}/api/remove_sub/${id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      console.log("Subject removed:", result);
+      fetchSubjects(); // Refresh the list after deletion
+    } catch (error) {
+      console.error("Error removing subject:", error);
+    }
   };
+
+  const handleDeleteImage = async (imageId: string) => {
+    if (!window.confirm("Delete this image?")) return;
+    try {
+      await fetch(`${API_URL}/api/remove_subject_img/${imageId}`, {
+        method: 'DELETE',
+      });
+      fetchSubjects(); // Refresh after deletion
+    } catch (error) {
+      console.error("Error deleting image:", error);
+    }
+  };
+
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
 
   const tableHeaders = ['Image', 'Person Name', 'Age', 'Gender', 'Email', 'Phone', 'Aadhar', 'Date Added', 'Action'];
+
+  if (loading) {
+    return <div>Loading subjects...</div>;
+  }
 
   return (
     <div className="p-6">
@@ -72,22 +146,43 @@ const SubjectManager: React.FC = () => {
         <Table headers={tableHeaders}>
           {currentSubjects.map((subject) => (
             <tr key={subject.id}>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 h-10 w-10">
-                    <img
-                      className="h-10 w-10 rounded-full object-cover"
-                      src={subject.image}
-                      alt=""
-                    />
-                  </div>
-                  <button className="ml-2 text-gray-400 hover:text-gray-500">
-                    <Plus size={14} />
-                  </button>
+              <td className="px-6 py-4">
+                <div className="flex flex-wrap gap-2">
+                  {subject.images.map((img) => (
+                    <div key={img.id} className="relative w-12 h-12">
+                      <img
+                        src={img.url}
+                        alt={subject.subject_name}
+                        className="w-full h-full object-cover rounded cursor-pointer"
+                        onClick={() => setPreviewSrc(img.url)}
+                      />
+                      <button
+                        onClick={() => handleDeleteImage(img.id)}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-xs rounded-full flex items-center justify-center"
+                        title="Remove image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {previewSrc && (
+                    <div
+                      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+                      onClick={() => setPreviewSrc(null)}
+                    >
+                      <img src={previewSrc} className="max-h-[90vh] max-w-[90vw] rounded" />
+                    </div>
+                  )}
+
+                  {/* plus‑button to add */}
+                  <AddSingleImage
+                    subjectId={subject.id}
+                    onUploadSuccess={fetchSubjects}
+                  />
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {subject.name}
+                {subject.subject_name}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {subject.age}
@@ -105,15 +200,18 @@ const SubjectManager: React.FC = () => {
                 {subject.aadhar}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {subject.dateAdded}
+                {fmt(subject.added_date)}
               </td>
+
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button
-                  onClick={() => handleRemoveSubject(subject.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
+                {/* className="text-red-500 hover:text-red-700" */}
+              <Button
+                variant="outline"
+                onClick={() => handleRemoveSubject(subject.id)}
+              >
+                Delete
+              </Button>
+
               </td>
             </tr>
           ))}
@@ -154,11 +252,12 @@ const SubjectManager: React.FC = () => {
         )}
       </div>
 
+
       <AddSubjectModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAdd={handleAddSubject}
-      />
+  isOpen={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  onAddSuccess={() => setRefreshTrigger(prev => prev + 1)}
+/>
     </div>
   );
 };

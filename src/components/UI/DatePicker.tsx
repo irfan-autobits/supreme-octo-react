@@ -1,3 +1,4 @@
+// project/src/components/UI/DatePicker.tsx
 import React from 'react';
 import { Calendar } from 'lucide-react';
 
@@ -15,7 +16,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ label, ...props }) => {
       )}
       <div className="relative">
         <input
-          type="date"
+          type="datetime-local"
           className="block w-full rounded-md border-gray-300 pl-10 focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
           {...props}
         />

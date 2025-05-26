@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// project/src/features/Cameras/AddCameraModal.tsx
+import React, { useState, FormEvent } from 'react';
 import Modal from '../../components/UI/Modal';
 import Button from '../../components/UI/Button';
 import Input from '../../components/UI/Input';
@@ -6,15 +7,15 @@ import Input from '../../components/UI/Input';
 interface AddCameraModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (camera: any) => void;
+  onAdd: (camera: { camera_name: string; tag: string; camera_url: string }) => void;
 }
 
 const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose, onAdd }) => {
-  const [activeTab, setActiveTab] = useState('direct');
+  const [activeTab, setActiveTab] = useState<'direct' | 'construct'>('direct');
   const [cameraData, setCameraData] = useState({
-    name: '',
+    camera_name: '',
     tag: '',
-    url: '',
+    camera_url: '',
     username: '',
     password: '',
     ip: '',
@@ -23,47 +24,48 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose, onAdd 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setCameraData({ ...cameraData, [name]: value });
+    setCameraData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    let finalUrl = '';
+    if (activeTab === 'direct') {
+      finalUrl = cameraData.camera_url;
+    } else {
+      finalUrl = `rtsp://${cameraData.username}:${cameraData.password}@${cameraData.ip}:${cameraData.port}`;
+    }
     onAdd({
-      name: cameraData.name,
+      camera_name: cameraData.camera_name,
       tag: cameraData.tag,
-      url: cameraData.url,
+      camera_url: finalUrl,
     });
+
     setCameraData({
-      name: '',
-      tag: '',
-      url: '',
-      username: '',
-      password: '',
-      ip: '',
-      port: '',
+      camera_name: '',
+      tag:         '',
+      camera_url:  '',
+      username:    '',
+      password:    '',
+      ip:          '',
+      port:        '',
     });
+    onClose();
   };
 
   const footer = (
     <>
-      <Button variant="secondary" onClick={onClose}>
-        Cancel
-      </Button>
-      <Button variant="primary" className="ml-3" onClick={handleSubmit}>
-        Save
-      </Button>
+      <Button variant="secondary" onClick={onClose}>Cancel</Button>
+      <Button variant="primary" className="ml-3" onClick={handleSubmit}>Save</Button>
     </>
   );
 
   return (
-    <Modal
-      title="Add Camera"
-      isOpen={isOpen}
-      onClose={onClose}
-      footer={footer}
-    >
-      <div className="mb-4">
+    <Modal title="Add Camera" isOpen={isOpen} onClose={onClose} footer={footer}>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex border-b border-gray-200 mb-4">
           <button
+            type="button"
             className={`px-4 py-2 font-medium text-sm ${
               activeTab === 'direct'
                 ? 'text-purple-600 border-b-2 border-purple-600'
@@ -74,6 +76,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose, onAdd 
             Direct URL
           </button>
           <button
+            type="button"
             className={`px-4 py-2 font-medium text-sm ${
               activeTab === 'construct'
                 ? 'text-purple-600 border-b-2 border-purple-600'
@@ -85,74 +88,74 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose, onAdd 
           </button>
         </div>
 
-        <div className="space-y-4">
-          <Input
-            label="Camera Name"
-            name="name"
-            value={cameraData.name}
-            onChange={handleChange}
-            placeholder="Enter camera name"
-          />
-          
-          <Input
-            label="Camera Tag"
-            name="tag"
-            value={cameraData.tag}
-            onChange={handleChange}
-            placeholder="Enter camera tag"
-          />
+        <Input
+          label="Camera Name"
+          name="camera_name"               // must be 'camera_name'
+          value={cameraData.camera_name}
+          onChange={handleChange}
+          placeholder="Enter camera name"
+          required
+        />
+        <Input
+          label="Camera Tag"
+          name="tag"
+          value={cameraData.tag}
+          onChange={handleChange}
+          placeholder="Enter camera tag"
+          required
+        />
 
-          {activeTab === 'direct' ? (
-            <Input
-              label="URL"
-              name="url"
-              value={cameraData.url}
-              onChange={handleChange}
-              placeholder="Enter camera URL"
-            />
-          ) : (
-            <>
-              {activeTab === 'construct' && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label="User Name"
-                      name="username"
-                      value={cameraData.username}
-                      onChange={handleChange}
-                      placeholder="Enter username"
-                    />
-                    <Input
-                      label="Password"
-                      type="password"
-                      name="password"
-                      value={cameraData.password}
-                      onChange={handleChange}
-                      placeholder="Enter password"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label="Camera IP"
-                      name="ip"
-                      value={cameraData.ip}
-                      onChange={handleChange}
-                      placeholder="Enter camera IP"
-                    />
-                    <Input
-                      label="Port"
-                      name="port"
-                      value={cameraData.port}
-                      onChange={handleChange}
-                      placeholder="Enter port"
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+        {activeTab === 'direct' ? (
+        <Input
+          label="URL"
+          name="camera_url"                // must be 'camera_url'
+          value={cameraData.camera_url}
+          onChange={handleChange}
+          placeholder="Enter camera URL"
+          required
+        />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="User Name"
+                name="username"
+                value={cameraData.username}
+                onChange={handleChange}
+                placeholder="Enter username"
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                name="password"
+                value={cameraData.password}
+                onChange={handleChange}
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Camera IP"
+                name="ip"
+                value={cameraData.ip}
+                onChange={handleChange}
+                placeholder="Enter camera IP"
+                required
+              />
+              <Input
+                label="Port"
+                name="port"
+                value={cameraData.port}
+                onChange={handleChange}
+                placeholder="Enter port"
+                required
+              />
+            </div>
+          </>
+        )}
+      </form>
     </Modal>
   );
 };

@@ -1,6 +1,8 @@
 // src/auth/components/Signup.tsx
 import React, { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) {
   throw new Error("VITE_API_URL is not defined in .env");
@@ -66,9 +68,9 @@ const Signup: React.FC = () => {
     </form>
       <p className="mt-4 text-center text-sm text-gray-600">
         Already have an account?{" "}
-        <a href="/login" className="text-purple-600 hover:underline">
-          Login
-        </a>
+      <Link to="/login" className="text-purple-600 hover:underline">
+        Login
+      </Link>        
       </p>
     </div>
   );

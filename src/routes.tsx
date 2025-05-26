@@ -11,6 +11,7 @@ import Analysis from './pages/Analysis';
 import CameraManager from './pages/CameraManager';
 import PersonTracker from './pages/PersonTracker';
 import SubjectManager from './pages/SubjectManager';
+import DetectionTable from './pages/DetectionTable';
 
 // Define a route object type
 export type AppRouteObject = RouteObject & {
@@ -31,4 +32,5 @@ export const privateRoutes: AppRouteObject[] = [
   { path: '/camera-manager', element: <CameraManager /> },
   { path: '/person-tracker', element: <PersonTracker /> },
   { path: '/subject-manager', element: <SubjectManager /> },
+  { path: '/detection-tab', element: <DetectionTable /> }
 ];

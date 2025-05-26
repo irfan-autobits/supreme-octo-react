@@ -1,3 +1,4 @@
+// project/src/components/UI/Logo.tsx
 import React from 'react';
 import { Snowflake } from 'lucide-react';
 

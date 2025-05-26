@@ -1,3 +1,4 @@
+// project/src/components/UI/Table.tsx
 import React from 'react';
 
 interface TableProps {

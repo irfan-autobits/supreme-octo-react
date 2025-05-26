@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, LineChart, Camera, Users, FileText, User as UserIcon } from 'lucide-react';
+import { Radar, Scan, View, Eye } from 'lucide-react'
 import Logo from '../UI/Logo';
 import { useAuthContext } from '../../auth/AuthContext';
 
@@ -32,6 +33,8 @@ const Sidebar: React.FC = () => {
         <NavItem to="/camera-manager" icon={<Camera size={20} />} text="Camera Manager" />
         <NavItem to="/person-tracker" icon={<Users size={20} />} text="Person Tracker" />
         <NavItem to="/subject-manager" icon={<FileText size={20} />} text="Subject Manager" />
+        <NavItem to="/detection-tab" icon={<Eye size={20} />} text="Detectoin Table" />
+
       </nav>
       <div className="p-4 border-t flex items-center">
         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">

@@ -1,6 +1,7 @@
 // src/auth/components/Login.tsx
 import React, { useState, FormEvent } from "react";
 import { useAuthContext } from "../AuthContext";
+import { Link } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL!;
 if (!API_URL) throw new Error("VITE_API_URL is not defined");
@@ -67,9 +68,9 @@ const Login: React.FC = () => {
       </form>
       <p className="mt-4 text-center text-sm text-gray-600">
         Don’t have an account?{" "}
-        <a href="/register" className="text-purple-600 hover:underline">
+        <Link to="/register" className="text-purple-600 hover:underline">
           Sign up
-        </a>
+        </Link>
       </p>
     </div>
   );
