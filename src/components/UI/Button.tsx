@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'lightGreen' | 'lightGreenoutline' | 'darkGreen' | 'darkGreenoutline' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   icon?: React.ReactNode;
@@ -16,12 +16,21 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50';
+  const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors';
   
   const variantClasses = {
-    primary: 'bg-purple-600 text-white hover:bg-purple-700',
+    lightGreen: 'bg-[#85AF49] text-white hover:bg-transparent hover:text-[#85AF49] hover:border hover:border-[#85AF49]',
+    lightGreenoutline: 'bg-transparent border border-[#85AF49] text-[#85AF49] hover:bg-[#85AF49] hover:text-white',
+    darkGreen: 'bg-[#43893D] text-white hover:bg-transparent hover:text-[#43893D] hover:border hover:border-[#43893D]',
+    darkGreenoutline: 'bg-transparent border border-[#43893D] text-[#43893D] hover:bg-[#43893D] hover:text-white',
+    // ✅ Green Primary
+    primary: 'bg-[#85AF49] text-white hover:bg-[#6B9436]',
+
+    // ✅ Keep secondary clean, maybe add subtle green tone if needed
     secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50',
-    outline: 'bg-transparent border border-purple-600 text-purple-600 hover:bg-purple-50'
+
+    // ✅ Green Outline (soft hover)
+    outline: 'bg-transparent border border-[#85AF49] text-[#85AF49] hover:bg-[#F3F9EC]'
   };
   
   const sizeClasses = {

@@ -28,8 +28,8 @@ const Input: React.FC<InputProps> = ({
           </div>
         )}
         <input
-          className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm ${
-            icon ? 'pl-10' : ''
+          className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#85AF49]
+            ${ icon ? 'pl-10' : ''
           } ${error ? 'border-red-300' : 'border-gray-300'} ${className}`}
           {...props}
         />
@@ -40,3 +40,6 @@ const Input: React.FC<InputProps> = ({
 };
 
 export default Input;
+
+
+// block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm 

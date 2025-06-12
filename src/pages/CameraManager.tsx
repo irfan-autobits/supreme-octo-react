@@ -1,14 +1,13 @@
 // project/src/pages/CameraManager.tsx
 import React, { useState, useEffect } from "react";
 import Button from "../components/UI/Button";
-// import Modal from '../components/UI/Modal';
 import { Plus, RotateCcw } from "lucide-react";
 import CameraCard from "../features/Cameras/CameraCard";
 import AddCameraModal from "../features/Cameras/AddCameraModal";
 import LiveFeed from "../features/Cameras/LiveFeed";
 import SettingToggle from "../features/Cameras/SettingToggle";
-
-// import LiveFeed from '../components/CameraManagement/LiveFeed';
+import EditCameraModal from "../features/Cameras/EditCameraModal";
+import DetectionTable from "../features/DetectionTab/DetTab"
 import { useQuery } from "@tanstack/react-query";
 import socket from "../utils/socket";
 
@@ -18,17 +17,26 @@ if (!API_URL) throw new Error("VITE_API_URL is not defined");
 type Camera = {
   camera_name: string;
   status: boolean;
+  tag: string;
 };
 
 type FeedMap = Record<string, { imageUrl: string }>;
 
+interface EditCamera {
+  camera_name: string;
+  tag: string;
+}
+
 const CameraManager: React.FC = () => {
+  const [isDetecting, setIsDetecting] = useState<boolean>(false);
   const [cameraList, setCameraList] = useState<Camera[]>([]);
   const [camEnabled, setCamEnabled] = useState<Record<string, boolean>>({});
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<"none" | "add" | "edit">("none");
   const [cameraFeeds, setCameraFeeds] = useState<FeedMap>({});
+  // Note: editingCamera is either an object _or_ null
+  const [editingCamera, setEditingCamera] = useState<EditCamera | null>(null);
 
-  // active feed via react-query real-time polling -patch
+  // fetch "active" feed name every 500ms
   const { data: activeFeed } = useQuery({
     queryKey: ["activeFeed"],
     queryFn: async () => {
@@ -39,18 +47,22 @@ const CameraManager: React.FC = () => {
     refetchInterval: 500,
   });
 
+  // load camera list once (and whenever it changes)
   useEffect(() => {
     fetchCameras();
   }, []);
+  useEffect(() => {
+    console.log("isDetecting changed:", isDetecting);
+  }, [isDetecting]);
 
-  // listen for frames
+  // listen for socket frames
   useEffect(() => {
     const handler = ({ camera_name, image }: any) => {
       const blob = new Blob([image], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
       setCameraFeeds((prev) => {
         const oldUrl = prev[camera_name]?.imageUrl;
-        oldUrl && URL.revokeObjectURL(oldUrl);
+        if (oldUrl) URL.revokeObjectURL(oldUrl);
         return { ...prev, [camera_name]: { imageUrl: url } };
       });
     };
@@ -60,7 +72,6 @@ const CameraManager: React.FC = () => {
     };
   }, []);
 
-  // fetch camera list
   const fetchCameras = async () => {
     try {
       const res = await fetch(`${API_URL}/api/camera_list`);
@@ -76,7 +87,6 @@ const CameraManager: React.FC = () => {
     }
   };
 
-  // helper POST
   const post = (path: string, body: any) =>
     fetch(`${API_URL}${path}`, {
       method: "POST",
@@ -84,7 +94,7 @@ const CameraManager: React.FC = () => {
       body: JSON.stringify(body),
     });
 
-  // controls
+  // ─── “Add Camera” POST ───────────────────────────────────
   const handleAddCamera = (data: {
     camera_name: string;
     tag: string;
@@ -93,19 +103,35 @@ const CameraManager: React.FC = () => {
     post("/api/add_camera", data).then(fetchCameras);
   };
 
-  const handleRemoveCamera = (name: string) =>
-    post("/api/remove_camera", { camera_name: name }).then(fetchCameras);
-  // const handleRemoveCamera = (name: string) => {
-  // console.log('🗑 Removing camera:', name);
-  // post('/api/remove_camera', { camera_name: name })
-  //   .then(res => res.json())
-  //   .then(json => {
-  //     console.log('↪️ Remove response:', json);
-  //     fetchCameras();
-  //   })
-  //   .catch(err => console.error('⚠️ Remove error:', err));
-  // };
+  // ─── “Remove Camera” POST ───────────────────────────────────
+  const handleRemoveCamera = (name: string) => {
+    if (!window.confirm("Do you want to Delete this Camera?")) return;
+    post("/api/remove_camera", { camera_name: name }).then(fetchCameras)
+  };
 
+  // ─── “Edit Camera” POST ───────────────────────────────────
+  // Note: We expect two args: (updatedCamera, originalName)
+  const handleEditCamera = (
+    updatedCamera: { camera_name: string; tag: string },
+    originalName: string
+  ) => {
+    // adjust this payload to whatever your backend expects
+    post("/api/edit_camera", {
+      original_name: originalName,
+      new_name: updatedCamera.camera_name,
+      new_tag: updatedCamera.tag,
+    }).then(fetchCameras);
+  };
+
+  // Called when clicking “Edit” in the card’s popup
+  const onEditHandle = (cam: { camera_name: string; tag: string }) => {
+    setEditingCamera(cam);
+    setActiveModal("edit");
+    console.log("📝 Editing camera:", cam);
+    
+  };
+
+  // ─── “Start/Stop Camera” ───────────────────────────────────
   const handleStartCamera = (name: string) =>
     post("/api/start_proc", { camera_name: name }).then(() =>
       setCamEnabled((p) => ({ ...p, [name]: true }))
@@ -116,25 +142,21 @@ const CameraManager: React.FC = () => {
     );
 
   const handleStartAll = () => {
-    console.log("▶️ Starting all cameras");
     fetch(`${API_URL}/api/start_all_proc`)
       .then(fetchCameras)
-      .catch((err) => console.error("⚠️ Start all error:", err));
+      .catch((err) => console.error(err));
   };
-
   const handleStopAll = () => {
-    console.log("▶ Stopping all cameras");
     fetch(`${API_URL}/api/stop_all_proc`)
       .then(fetchCameras)
-      .catch((err) => console.error("⚠️ Start all error:", err));
+      .catch((err) => console.error(err));
   };
-
   const handleRestartAll = () => {
-    console.log("▶️ Restarting all cameras");
     fetch(`${API_URL}/api/restart_all_proc`)
       .then(fetchCameras)
-      .catch((err) => console.error("⚠️ Start all error:", err));
+      .catch((err) => console.error(err));
   };
+
   const handleOpenFeed = (name: string) =>
     post("/api/start_feed", { camera_name: name }).then(fetchCameras);
   const handleCloseFeed = (name: string) =>
@@ -144,80 +166,92 @@ const CameraManager: React.FC = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Camera Manager</h1>
-        <div className={`flex ${activeFeed ? "space-x-4" : ""}`}>
-          <SettingToggle settingKey="RECOGNIZE" label="Enable Detection" />
+        <div className="flex">
+          <SettingToggle settingKey="RECOGNIZE" label="Enable Detection" setIsDetecting={setIsDetecting} />
           <Button
+            className="ml-2 mr-2"
             variant="primary"
             icon={<Plus size={16} />}
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              setActiveModal("add");
+              setEditingCamera(null); // not editing any camera
+            }}
           >
             Add
           </Button>
-          <Button
-            variant="outline"
-            icon={<RotateCcw size={16} />}
-            onClick={handleRestartAll}
-          >
+
+          <div className="inline-flex border rounded-md overflow-hidden">
+          <Button variant="secondary" icon={<RotateCcw size={16} />} onClick={handleRestartAll} className="rounded-none rounded-l-md">
             Restart All
           </Button>
-          <Button variant="outline" onClick={handleStartAll}>
+          <Button variant="secondary" onClick={handleStartAll} className="rounded-none border-l">
             Start All
           </Button>
-          <Button variant="outline" onClick={handleStopAll}>
+          <Button variant="secondary" onClick={handleStopAll} className="rounded-none border-l rounded-r-md">
             Stop All
           </Button>
+          </div>
         </div>
       </div>
 
-      {/* Camera list */}
-      {/* Wrap this whole section in a flex container when feed is open */}
-      <div className={activeFeed ? "flex space-x-4" : ""}>
-        {/* Left panel: cards */}
-        <div
-          className={
-            activeFeed
-              ? "flex flex-col space-y-4 w-1/2 overflow-auto"
-              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full"
-          }
-        >
+      {/* ─── Camera list + Live‐feed side‐by‐side ───────────────── */}
+      <div className="flex space-x-4">
+        {/* Left panel: list of cards */}
+        <div className="w-80 flex flex-col space-y-4 overflow-auto">
           {cameraList.map((cam) => (
             <CameraCard
               key={cam.camera_name}
               camera={{
                 id: cam.camera_name.length,
                 name: cam.camera_name,
-                tag: "",
+                tag: cam.tag, // if your backend has a tag field, pull it in `cameraList`
                 status: camEnabled[cam.camera_name] ? "active" : "inactive",
               }}
-              onToggle={(_, action) =>
+              onToggle={(name, action) =>
                 action === "start"
-                  ? handleStartCamera(cam.camera_name)
-                  : handleStopCamera(cam.camera_name)
+                  ? handleStartCamera(name)
+                  : handleStopCamera(name)
               }
               onRemove={handleRemoveCamera}
               onOpenFeed={handleOpenFeed}
               onCloseFeed={handleCloseFeed}
               activeFeed={activeFeed}
+              onEdit={onEditHandle}
             />
           ))}
         </div>
 
-        {/* Right panel: live feed */}
-        {activeFeed && (
-          <div className="w-1/2 p-4 bg-white rounded shadow overflow-auto">
-            <LiveFeed
-              activeCameraName={activeFeed}
-              cameraFeeds={cameraFeeds}
-              onClose={handleCloseFeed}
-            />
-          </div>
-        )}
+        {/* Right panel: live‐view pane (shows JPEG frames) */}
+        <div className="flex-1 p-4 bg-white rounded-lg shadow overflow-auto shadow-sm">
+          <LiveFeed
+            activeCameraName={activeFeed}
+            cameraFeeds={cameraFeeds}
+            onClose={handleCloseFeed}
+          />
+          <DetectionTable 
+          activeCameraName={activeFeed}
+          isDetecting={isDetecting}           
+          />
+          
+        </div>
       </div>
 
+      {/* ─── Add‐modal ───────────────────────────────────────────── */}
       <AddCameraModal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
+        isOpen={activeModal === "add"}
+        onClose={() => setActiveModal("none")}
         onAdd={handleAddCamera}
+      />
+
+      {/* ─── Edit‐modal ──────────────────────────────────────────── */}
+      <EditCameraModal
+        isOpen={activeModal === "edit"}
+        onClose={() => {
+          setActiveModal("none");
+          setEditingCamera(null);
+        }}
+        onEdit={handleEditCamera}
+        camera={editingCamera}
       />
     </div>
   );

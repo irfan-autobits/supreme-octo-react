@@ -55,12 +55,29 @@ const PersonTracker: React.FC = () => {
     const numPerRow = 5;
     const xSpacing = 300;
     const ySpacing = 150;
+    let grouped: { [key: string]: MovementEntry[] } = {};
+
+    for (const entry of movementHistory) {
+      // Pick the correct timestamp field:
+      const dateObj = new Date(entry.entry_time); // or entry.start_time_raw if preferred
+
+      const key = dateObj.toISOString().slice(0, 10); // e.g., "2025-06-10"
+
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+
+      grouped[key].push(entry);
+    }
+
     const nodes = movementHistory.map((entry, idx) => {
+      console.log(`movement data ${JSON.stringify(entry)}`)
       const row = Math.floor(idx / numPerRow);
       const col = idx % numPerRow;
       const x = row % 2 === 0 ? col * xSpacing : (numPerRow - 1 - col) * xSpacing;
       const y = row * ySpacing;
       const date = parseTimestamp(entry.entry_time);
+
       return {
         id: `node-${idx}`,
         type: 'custom',
@@ -68,6 +85,7 @@ const PersonTracker: React.FC = () => {
         position: { x, y },
       };
     });
+    
     const edges = movementHistory.slice(1).map((_, idx) => ({
       id: `edge-${idx}`,
       source: `node-${idx}`,

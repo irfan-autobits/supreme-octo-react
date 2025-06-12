@@ -1,59 +1,78 @@
-// project/src/features/Subjects/AddSubjectModal.tsx
+// project/src/features/Subjects/EditSubjectModal.tsx
 import React, {
   useState,
-  useEffect,
   ChangeEvent,
   FormEvent,
+  useEffect,
   useRef,
 } from "react";
 import Modal from "../../components/UI/Modal";
 import Button from "../../components/UI/Button";
 import Input from "../../components/UI/Input";
 import Select from "../../components/UI/Select";
+import { Subject } from "./types";
 import { Plus } from "lucide-react";
-import { ImageObj } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL!;
 if (!API_URL) throw new Error("VITE_API_URL is not defined");
 
 interface Props {
+  subject: Subject;
   isOpen: boolean;
   onClose: () => void;
-  /** Call this so SubjectManager can refresh its list */
-  onAddSuccess: () => void;
+  onEditSuccess: () => void; // tells parent to re-fetch after Save
 }
 
-const AddSubjectModal: React.FC<Props> = ({
+const EditSubjectModal: React.FC<Props> = ({
+  subject,
   isOpen,
   onClose,
-  onAddSuccess,
+  onEditSuccess,
 }) => {
-  /* -------- form state -------- */
+  // 1) Metadata form state
   const [form, setForm] = useState({
-    subject_name: "",
-    Age: "",
-    Gender: "Male",
-    Email: "",
-    Phone: "",
-    Aadhar: "",
+    subject_name: subject.subject_name,
+    Age: subject.age.toString(),
+    Gender: subject.gender,
+    Email: subject.email,
+    Phone: subject.phone,
+    Aadhar: subject.aadhar,
   });
 
-  const [images, setImages] = useState<FileList | null>(null);
-  const [csv, setCsv] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const formId = "add-subject-form";
-
-  const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
-  const [currentImages, setCurrentImages] = useState<ImageObj[]>([]);
+  // 2) Track images locally (no API calls yet)
+  const [currentImages, setCurrentImages] = useState(subject.images);
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
 
+  const [submitting, setSubmitting] = useState(false);
+  const formId = "edit-subject-form";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // total count for delete-button logic
   const totalCount = currentImages.length + newImageFiles.length;
 
-  /* -------- handlers -------- */
-  const onField = (e: ChangeEvent<HTMLInputElement>) =>
+  // 3) When `subject` prop changes, re-initialize local state
+  useEffect(() => {
+    setForm({
+      subject_name: subject.subject_name,
+      Age: subject.age.toString(),
+      Gender: subject.gender,
+      Email: subject.email,
+      Phone: subject.phone,
+      Aadhar: subject.aadhar,
+    });
+    setCurrentImages(subject.images);
+    setDeletedImageIds([]);
+    setNewImageFiles([]);
+  }, [subject]);
+
+  // 4) Metadata handlers
+  const onField = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+  const onSelectGender = (v: string) => {
+    setForm({ ...form, Gender: v });
+  };
 
   // 5) Mark existing image for deletion (UI only)
   const markDeleteExisting = (imageId: string) => {
@@ -80,49 +99,66 @@ const AddSubjectModal: React.FC<Props> = ({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // 8) Helpers to call the image endpoints (used only in submit)
+  const deleteSubjectImg = (imgId: string) =>
+    fetch(`${API_URL}/api/remove_subject_img/${imgId}`, { method: "DELETE" });
+
+  const uploadSubjectImg = (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${API_URL}/api/add_subject_img/${subject.id}`, {
+      method: "POST",
+      body: formData,
+    });
+  };
+
+  // 9) Submit handler: batch‐submit metadata + all image changes
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (submitting) return;
-
-    const hasDetails = Object.values(form).some((v) => v);
-    if (!hasDetails && !csv) {
-      alert("Fill subject details or choose CSV");
-      return;
-    }
-
-    const data = new FormData();
-    if (images) [...images].forEach((f) => data.append("file", f));
-    newImageFiles.forEach((f) => data.append("file", f));
-    if (csv) data.append("csv", csv);
-    if (hasDetails) Object.entries(form).forEach(([k, v]) => data.append(k, v));
-    data.append("mode", activeTab);
-
     setSubmitting(true);
+
+    // a) Always append subject_name (Flask requires it)
+    const metaData = new FormData();
+    metaData.append("subject_name", form.subject_name);
+    if (form.Age !== subject.age.toString()) metaData.append("Age", form.Age);
+    if (form.Gender !== subject.gender) metaData.append("Gender", form.Gender);
+    if (form.Email !== subject.email) metaData.append("Email", form.Email);
+    if (form.Phone !== subject.phone) metaData.append("Phone", form.Phone);
+    if (form.Aadhar !== subject.aadhar) metaData.append("Aadhar", form.Aadhar);
+    // We can omit “id” here, since the URL already contains the subject_id.
+
     try {
-      const response = await fetch(`${API_URL}/api/add_sub`, {
+      // b) Build delete + upload Promises (but don’t execute until Promise.all)
+      const uploadPromises = newImageFiles.map((f) => uploadSubjectImg(f));
+      const deletePromises = deletedImageIds.map((imgId) =>
+        deleteSubjectImg(imgId)
+      );
+
+      // c) Metadata API call
+      const metadataPromise = fetch(`${API_URL}/api/edit_sub/${subject.id}`, {
         method: "POST",
-        body: data,
+        body: metaData,
       });
-      const result = await response.json();
-      console.log("Subject added:", result);
-      onAddSuccess();
+
+      // d) Wait for all three groups (deletes, uploads, metadata)
+      // await Promise.all([
+      //   ...uploadPromises,
+      //   ...deletePromises,
+      //   metadataPromise,
+      // ]);
+
+      // e) After success, parent re-fetches and modal closes
+      onEditSuccess();
       onClose();
     } catch (err) {
-      console.error("add_sub error", err);
+      console.error("Error saving edits:", err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      newImageFiles.forEach((file) =>
-        URL.revokeObjectURL(URL.createObjectURL(file))
-      );
-    };
-  }, [newImageFiles]);
-
-  /* -------- modal footer -------- */
+  // 10) Modal footer buttons
   const footer = (
     <>
       <Button
@@ -135,49 +171,20 @@ const AddSubjectModal: React.FC<Props> = ({
         {submitting ? "Saving…" : "Save"}
       </Button>
       <Button variant="secondary" className="min-w-[100px]" onClick={onClose}>
-        {" "}
-        Cancel{" "}
+        Cancel
       </Button>
     </>
   );
 
   return (
     <Modal
-      title="Add Subject"
+      title="Edit Subject"
       isOpen={isOpen}
       onClose={onClose}
       footer={footer}
     >
       <form id={formId} onSubmit={submit} className="space-y-4">
-        <div className="flex border-b border-gray-200 mb-4">
-          <button
-            type="button"
-            className={`px-4 py-2 font-medium text-sm ${
-              activeTab === "single"
-                ? "text-[#85AF49] border-b-2 border-[#85AF49]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("single")}
-          >
-            Single Add
-          </button>
-          <button
-            type="button"
-            className={`px-4 py-2 font-medium text-sm ${
-              activeTab === "bulk"
-                ? "text-[#85AF49] border-b-2 border-[#85AF49]"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            onClick={() => setActiveTab("bulk")}
-          >
-            Bulk Add
-          </button>
-        </div>
-        <input type="hidden" name="mode" value={activeTab} />
-
-        {activeTab === 'single' ? (
-          <>
-        {/*  */}
+        {/* Metadata fields */}
         <div className="grid md:grid-cols-3 gap-4">
           <Input
             label="Name"
@@ -185,6 +192,7 @@ const AddSubjectModal: React.FC<Props> = ({
             value={form.subject_name}
             onChange={onField}
             placeholder="Enter name"
+            disabled
           />
           <Input
             label="Age"
@@ -194,7 +202,6 @@ const AddSubjectModal: React.FC<Props> = ({
             onChange={onField}
             placeholder="Enter age"
           />
-
           <Select
             label="Gender"
             value={form.Gender}
@@ -203,20 +210,18 @@ const AddSubjectModal: React.FC<Props> = ({
               { value: "Female", label: "Female" },
               { value: "Other", label: "Other" },
             ]}
-            onChange={(v) => setForm({ ...form, Gender: v })}
+            onChange={onSelectGender}
           />
         </div>
-        {/*  grid-cols-1 */}
         <div className="grid md:grid-cols-2 gap-4">
           <Input
             label="Email"
             name="Email"
-            type="Email"
+            type="email"
             value={form.Email}
             onChange={onField}
             placeholder="Enter email"
           />
-
           <Input
             label="Phone"
             name="Phone"
@@ -225,7 +230,6 @@ const AddSubjectModal: React.FC<Props> = ({
             placeholder="Enter phone"
           />
         </div>
-
         <Input
           label="Aadhar"
           name="Aadhar"
@@ -243,7 +247,7 @@ const AddSubjectModal: React.FC<Props> = ({
             >
               <img
                 src={image.url}
-                alt={`${form.subject_name} profile`}
+                alt={`${subject.subject_name} profile`}
                 className="rounded-full w-full h-full object-cover cursor-pointer"
               />
               {totalCount > 1 && (
@@ -307,38 +311,9 @@ const AddSubjectModal: React.FC<Props> = ({
             />
           </div>
         </div>
-          </>
-
-        ) : (
-
-          <div className="grid md:grid-cols-2 gap-4">
-          {/* upload fields */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Upload Image(S)
-            </label>
-            <Input
-              type="file"
-              multiple
-              onChange={(e) => setImages(e.target.files)}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Upload CSV (for Bulk Import)
-            </label>
-            <Input
-              type="file"
-              accept=".csv"
-              onChange={(e) => setCsv(e.target.files?.[0] || null)}
-            />
-          </div>
-        </div>
-        )}
       </form>
     </Modal>
   );
 };
 
-export default AddSubjectModal;
+export default EditSubjectModal;
