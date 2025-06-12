@@ -1,6 +1,6 @@
 // project/src/pages/DetectionTable.tsx
 import React, { useState, useEffect, ChangeEvent } from "react";
-import { CloudCog, Search } from "lucide-react";
+import { CloudCog, Search, SearchIcon } from "lucide-react";
 import Input from "../components/UI/Input";
 import Button from "../components/UI/Button";
 import Table from "../components/UI/Table";
@@ -50,11 +50,14 @@ const DetectionTable: React.FC = () => {
   let dateFormateStr = "dd-MM-yy hh:mm a";
   const [data, setData] = useState<Detection[]>([]);
   const [search, setSearch] = useState("");
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState("timestamp");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [totalRowsCount, setTotalRowsCount] = useState<number>(0);
   const [startDate, setStartDate] = useState<string>(
     format(
       setMilliseconds(
@@ -88,7 +91,7 @@ const DetectionTable: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedCamera, setSelectedCamera] = useState<string>("");
   const [selectedTag, setSelectedTag] = useState<string>("");
-  const [isOpenDatepicker, setIsOpenDatepicker] = useState<boolean>(true);
+  const [isOpenDatepicker, setIsOpenDatepicker] = useState<boolean>(false);
   const [people, setPeople] = useState<string[]>([]);
   const [cameras, setCameras] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -140,21 +143,13 @@ const DetectionTable: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    // let formatedstartDate = formatISO(
-    //   parse(format(startDate, dateFormateStr), dateFormateStr, new Date()),
-    //   { representation: "complete" }
-    // );
-    // let formatedendDate = formatISO(
-    //   parse(format(endDate, dateFormateStr), dateFormateStr, new Date()),
-    //   { representation: "complete" }
-    // );
-    let formatedstartDate = parse(format(startDate, dateFormateStr), dateFormateStr, new Date());
-    let formatedendDate = parse(format(endDate, dateFormateStr), dateFormateStr, new Date());
+    let formatedstartDate = parse(startDate, dateFormateStr, new Date() );
+    let formatedendDate = parse(endDate, dateFormateStr, new Date());
 
-    console.log(formatedstartDate);
     const qs = {
-      page: page.toString(),
-      // limit: ITEMS_PER_PAGE.toString(),
+      page: pageIndex,
+      limit: 100,
+      offset: pageSize,
       subject: selectedSubject,
       camera: selectedCamera,
       tag: selectedTag,
@@ -221,7 +216,7 @@ const DetectionTable: React.FC = () => {
       }
     }
     doFetch();
-  }, [selectedTag]); // now the callback itself is sync
+  }, [selectedTag, pageIndex, pageSize]); // now the callback itself is sync
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -307,6 +302,7 @@ const DetectionTable: React.FC = () => {
               onChange={setSelectedTag}
               // disabled={!selectedCamera}
             />
+           <SearchIcon size={80} />
           </div>
         </div>
         <ReactTable
@@ -341,9 +337,14 @@ const DetectionTable: React.FC = () => {
               header: "Timestamp",
             },
           ]}
-          pageIndex={0}
-          pageSize={5}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
           pageSizes={[1, 10, 20, 30]}
+          totalCount={totalRowsCount}
+          onPaginationChange={(newPage, newSize) => {
+            setPageIndex(newPage);
+            setPageSize(newSize);
+          }}
         />
 
         {false && (
@@ -435,7 +436,7 @@ function ValueShow({ value, label, clickHandler }: ValueShowProps) {
       onClick={clickHandler}
     >
       <div className="text-zinc-500">{label}</div>
-      <div className="">{value}</div>
+      <div className="px-2 py-1">{value}</div>
     </div>
   );
 }

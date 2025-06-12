@@ -18,9 +18,11 @@ import {
 interface ReactTableProps<TData extends RowData> {
   rows?: TData[];
   columns?: ColumnDef<TData>[];
-  pageSizes?: [];
+  pageSizes?: number[];
   pageIndex?: number;
   pageSize?: number;
+  totalCount: number; // <- required to calculate total pages
+  onPaginationChange: (pageIndex: number, pageSize: number) => void;
 }
 
 // Define meta type for table
@@ -48,6 +50,8 @@ export const ReactTable = <TData extends RowData>({
   pageSizes = [],
   pageIndex = 0,
   pageSize = 5,
+  totalCount,
+  onPaginationChange
 }: ReactTableProps<TData>) => {
   const [pagination, setPagination] = useState({
     pageIndex,
@@ -61,9 +65,16 @@ export const ReactTable = <TData extends RowData>({
   useEffect(() => {
     setData(rows);
   }, [rows]);
+
+  useEffect(() => {
+    onPaginationChange?.(pagination.pageIndex, pagination.pageSize);
+  }, [pagination.pageIndex, pagination.pageSize]);
+
   const table = useReactTable<TData>({
     data,
     columns,
+    manualPagination: true, // <-- very important for server-side
+    pageCount: Math.ceil(totalCount / pagination.pageSize), 
     state: {
       columnFilters,
       pagination,
