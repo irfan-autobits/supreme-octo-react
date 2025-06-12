@@ -3,7 +3,7 @@ import React from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
 import { publicRoutes, privateRoutes } from './routes';
-import RequireAuth from './auth/RequireAuth';
+// import RequireAuth from './auth/RequireAuth';
 
 const App: React.FC = () => (
   <Routes>
@@ -13,7 +13,7 @@ const App: React.FC = () => (
     ))}
 
     {/* Private routes - protected + layout sidebar */}
-    <Route element={<RequireAuth />}> 
+    <Route > 
       {/* Layout wrapper for private routes */}
       <Route element={<Layout><Outlet /></Layout>}>
         {privateRoutes.map((route) => (
@@ -23,7 +23,7 @@ const App: React.FC = () => (
     </Route>
 
     {/* Catch-all fallback */}
-    <Route path="*" element={<Navigate to="/login" replace />} />
+    <Route path="*" element={<Navigate to="/dashboard" replace />} />
   </Routes>
 );
 
