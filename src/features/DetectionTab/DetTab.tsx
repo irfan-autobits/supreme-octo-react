@@ -9,7 +9,16 @@ import {
   formatShort,
   localToUtcIso,
 } from "../../utils/time";
-
+import { ReactTable } from "../../components/UI/ReactTable";
+import {
+  format,
+  parse,
+  parseISO,
+  setHours,
+  setMilliseconds,
+  setMinutes,
+  setSeconds,
+} from "date-fns";
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) throw new Error("VITE_API_URL is not defined");
 
@@ -29,6 +38,46 @@ const DetectionTable: React.FC<{
   activeCameraName: string;
   isDetecting: boolean;
 }> = ({ activeCameraName, isDetecting }) => {
+  let dateFormateStr = "dd-MM-yy hh:mm a";
+  const [columnDef, setColumnDef] = useState<
+    { accessorKey: string; header: string; cell?: any }[]
+  >([
+    {
+      accessorKey: "id",
+      header: "ID",
+    },
+    {
+      accessorKey: "subject",
+      header: "Person Name",
+      cell: ({ row }: any) => (
+        <PersonNameAndPhoto value={row.original.subject} />
+      ),
+    },
+    {
+      accessorKey: "camera_name",
+      header: "Camera Name",
+    },
+    {
+      accessorKey: "camera_tag",
+      header: "Camera Tag",
+    },
+    {
+      accessorKey: "det_score",
+      header: "Detection Score",
+    },
+    {
+      accessorKey: "distance",
+      header: "Distance From Known",
+    },
+    {
+      accessorKey: "timestamp",
+      header: "Datetime",
+    },
+  ]);
+  const [pageIndex, setPageIndex] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalPageCount, setTotalPageCount] = useState<number>(0);
+
   const [data, setData] = useState<Detection[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -55,23 +104,89 @@ const DetectionTable: React.FC<{
     };
   }, [activeCameraName, search]);
 
+  const post = (path: string, body: any) =>
+    fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
   const fetchData = async () => {
-    if (isDetectingRef.current === true) {
-      setSearch(activeCameraName);
-      setLoading(true);
-      const qs = new URLSearchParams({
-        page: page.toString(),
-        limit: ITEMS_PER_PAGE.toString(),
-        search,
-        sort_field: sortField,
-        sort_order: sortOrder,
+
+    setLoading(true);
+
+    const startDate = format(
+      setMilliseconds(
+        setSeconds(
+          setMinutes(
+            setHours(new Date(), 0), // subtract 1 day, set hour to 23
+            0
+          ),
+          0
+        ),
+        0
+      ),
+      dateFormateStr
+    );
+    const endDate = format(
+      setMilliseconds(
+        setSeconds(
+          setMinutes(
+            setHours(new Date(), 23), // subtract 1 day, set hour to 23
+            59
+          ),
+          0
+        ),
+        0
+      ),
+      dateFormateStr
+    );
+    let formatedstartDate = parse(startDate, dateFormateStr, new Date());
+    let formatedendDate = parse(endDate, dateFormateStr, new Date());
+
+    const qs = {
+      page: pageIndex,
+      // limit: 100,
+      offset: pageSize,
+      subject: "",
+      camera: activeCameraName,
+      // camera: "",
+      tag: "",
+      start: formatedstartDate,
+      end: formatedendDate,
+      sort_field: "",
+      sort_order: "",
+    };
+
+    post(`/api/reco_table`, qs)
+      .then((res) => res.json())
+      .then((data) => {
+        setData(
+          data.detections.map((row: any) => {
+            let timestamp = row.timestamp;
+            const datetime = format(
+              parseISO(timestamp),
+              "dd/MM/yyyy, hh:mm:ss a"
+            );
+
+            return {
+              ...row,
+              timestamp: datetime,
+              subject: {
+                name: row.subject,
+                photoUrl: row.det_face.replace(
+                  "http://localhost:5757",
+                  API_URL
+                ),
+              },
+            };
+          }) || []
+        );
+        setTotal(data.total || 0);
+        setTotalPageCount(data.total_pages);
+        console.log(data.total_pages);
       });
-      const res = await fetch(`${API_URL}/api/reco_table?${qs}`);
-      const json = await res.json();
-      setData(json.detections || []);
-      setTotal(json.total || 0);
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   const handleSort = (field: string) => {
@@ -84,69 +199,62 @@ const DetectionTable: React.FC<{
     setPage(1);
   };
 
+  const handlePaginationAndSorting = (
+    pageIndex: number,
+    pageSize: number,
+    sorting: SortingState
+  ) => {
+    setPageIndex(pageIndex + 1);
+    setPageSize(pageSize);
+    const sortColumn = sorting?.[0]?.id;
+    const sortOrder = sorting?.[0]?.desc ? "desc" : "asc";
+    console.log("sortOrder: ", sortOrder);
+    console.log("sortColumn: ", sortColumn);
+    setSortOrder(sortOrder);
+    setSortField(sortColumn);
+
+    // fetchDataFromServer({ pageIndex, pageSize, sortColumn, sortOrder });
+  };
+
+  const PersonNameAndPhoto: React.FC<{
+    value: { name: string; photoUrl: string };
+  }> = ({ value }) => {
+    console.log(value); // optional for debugging
+
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <img
+          src={value.photoUrl}
+          alt={value.name}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
+        />
+        <span>{value.name}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">{activeCameraName} Detection</h1>
-{/* 
-      <div className="p-4 border-b border-gray-200">
-        <div className="max-w-md">
-          <Input
-            icon={<Search size={16} className="text-gray-400" />}
-            placeholder="Search"
-            value={search}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-          />
-        </div>
-      </div> */}
-
+      <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+        {activeCameraName} Detection
+      </h1>
       <div className="bg-white rounded-lg shadow-sm">
-        <Table
-          headers={[
-            "ID",
-            "Person Name",
-            "Camera Name",
-            "Camera Tag",
-            "Detection Score",
-            "Distance From Know",
-            "Timestamp",
-            "Image",
-          ]}
-        >
-          {data.map((d, i) => (
-            <tr key={d.id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {d.id}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {d.subject}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {d.camera_name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {d.camera_tag}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {d.det_score.toFixed(1)}%
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {d.distance}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {formatTimestamp(parseTimestamp(d.timestamp))}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <img
-                  className="h-15 w-15 rounded-md object-cover"
-                  src={d.det_face}
-                  width={50}
-                  height={50}
-                  alt={`  ${d.subject}`}
-                />
-              </td>
-            </tr>
-          ))}
-        </Table>
+        <ReactTable
+          rows={data}
+          columns={columnDef}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          pageSizes={[1, 10, 20, 30, 50, 100, 10000000000]}
+          totalCount={totalPageCount}
+          onPaginationChange={(page, size, sorting) =>
+            handlePaginationAndSorting(page, size, sorting)
+          }
+        />
       </div>
     </div>
   );

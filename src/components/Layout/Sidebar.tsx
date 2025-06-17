@@ -45,11 +45,11 @@ const Sidebar: React.FC = () => {
           icon={<LayoutDashboard size={20} />}
           text="Dashboard"
         />
-        <NavItem
+        {/* <NavItem
           to="/analysis"
           icon={<LineChart size={20} />}
           text="Analysis"
-        />
+        /> */}
         <NavItem
           to="/camera-manager"
           icon={<Camera size={20} />}

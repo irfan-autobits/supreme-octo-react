@@ -69,7 +69,7 @@ export default function SubjectManager() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">
-          Subject Manager
+          Person Manager
         </h1>
         <Button
           variant="primary"

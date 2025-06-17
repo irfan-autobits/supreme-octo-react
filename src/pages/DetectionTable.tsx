@@ -1,6 +1,6 @@
 // project/src/pages/DetectionTable.tsx
 import React, { useState, useEffect, ChangeEvent } from "react";
-import { CloudCog, Search, SearchIcon } from "lucide-react";
+import { CloudCog, Search, SearchIcon, XCircleIcon, XIcon } from "lucide-react";
 import Input from "../components/UI/Input";
 import Button from "../components/UI/Button";
 import Table from "../components/UI/Table";
@@ -23,12 +23,14 @@ import {
   format,
   formatISO,
   parse,
+  parseISO,
   setHours,
   setMilliseconds,
   setMinutes,
   setSeconds,
   subDays,
 } from "date-fns";
+import { SortingState } from "@tanstack/react-table";
 
 const API_URL = import.meta.env.VITE_API_URL;
 if (!API_URL) throw new Error("VITE_API_URL is not defined");
@@ -48,23 +50,76 @@ interface Detection {
 const DetectionTable: React.FC = () => {
   let nowtime = new Date();
   let dateFormateStr = "dd-MM-yy hh:mm a";
+  const [columnDef, setColumnDef] = useState<{ accessorKey: string; header: string; cell?: any}[]>([
+            {
+              accessorKey: "id",
+              header: "ID",
+            },
+            {
+              accessorKey: 'subject',
+              header: 'Person Name',
+              cell: ({ row }: any) => (
+                <PersonNameAndPhoto value={row.original.subject} />
+              ),
+            },
+            {
+              accessorKey: "camera_name",
+              header: "Camera Name",
+            },
+            {
+              accessorKey: "camera_tag",
+              header: "Camera Tag",
+            },
+            {
+              accessorKey: "det_score",
+              header: "Detection Score",
+            },
+            {
+              accessorKey: "distance",
+              header: "Distance From Known",
+            },
+            {
+              accessorKey: "timestamp",
+              header: "Datetime",
+            },
+          ]);
+
+  const PersonNameAndPhoto: React.FC<{ value: { name: string; photoUrl: string } }> = ({ value }) => {
+    console.log(value); // optional for debugging
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img
+          src={value.photoUrl}
+          alt={value.name}
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            objectFit: 'cover',
+          }}
+        />
+        <span>{value.name}</span>
+      </div>
+    );
+  };
   const [data, setData] = useState<Detection[]>([]);
   const [search, setSearch] = useState("");
-  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [pageIndex, setPageIndex] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState("timestamp");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
-  const [totalRowsCount, setTotalRowsCount] = useState<number>(0);
+  const [totalPageCount, setTotalPageCount] = useState<number>(0);
   const [startDate, setStartDate] = useState<string>(
     format(
       setMilliseconds(
         setSeconds(
           setMinutes(
-            setHours(subDays(new Date(), 1), 23), // subtract 1 day, set hour to 23
-            59
+            setHours(new Date(), 0), // subtract 1 day, set hour to 23
+            0
           ),
           0
         ),
@@ -94,10 +149,18 @@ const DetectionTable: React.FC = () => {
   const [isOpenDatepicker, setIsOpenDatepicker] = useState<boolean>(false);
   const [people, setPeople] = useState<string[]>([]);
   const [cameras, setCameras] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+  const [personOptions, setpersonOptions] = useState<
+    { value: any; label: any }[]
+  >([]);
+  const [cameraOptions, setcameraOptions] = useState<
+    { value: any; label: any }[]
+  >([]);
+  const [tagOptions, settagOptions] = useState<any>([]);
+  const [groupedTagOption, setgroupedTagOption] = useState<any>({});
 
   const [from_date, setFromDate] = useState<Date | DateObject | string>({
-    day: nowtime.getDate() - 1,
+    day: nowtime.getDate(),
     month: nowtime.getMonth(),
     year: nowtime.getFullYear(),
     hour: 12,
@@ -109,9 +172,9 @@ const DetectionTable: React.FC = () => {
     day: nowtime.getDate(),
     month: nowtime.getMonth(),
     year: nowtime.getFullYear(),
-    hour: 12,
-    minute: 0,
-    meridiem: "AM",
+    hour: 11,
+    minute: 59,
+    meridiem: "PM",
     hour24: 0,
   });
   // OR use JSON object with : day, month, year
@@ -143,12 +206,12 @@ const DetectionTable: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    let formatedstartDate = parse(startDate, dateFormateStr, new Date() );
+    let formatedstartDate = parse(startDate, dateFormateStr, new Date());
     let formatedendDate = parse(endDate, dateFormateStr, new Date());
 
     const qs = {
       page: pageIndex,
-      limit: 100,
+      // limit: 100,
       offset: pageSize,
       subject: selectedSubject,
       camera: selectedCamera,
@@ -162,61 +225,153 @@ const DetectionTable: React.FC = () => {
     post(`/api/reco_table`, qs)
       .then((res) => res.json())
       .then((data) => {
-        setData(data.detections || []);
+        setData(
+          data.detections.map((row: any) => {
+
+            let timestamp = row.timestamp;
+            const datetime = format(parseISO(timestamp), "dd/MM/yyyy, hh:mm:ss a");
+
+            return{
+              ...row,
+              timestamp: datetime,
+              subject: { name: row.subject, photoUrl: row.det_face.replace("http://localhost:5757", API_URL) }
+            };
+          })
+          || []
+        );        
         setTotal(data.total || 0);
+        setTotalPageCount(data.total_pages);
+        console.log(data.total_pages);
       });
     setLoading(false);
+  };
+
+  const handlePaginationAndSorting = (
+    pageIndex: number,
+    pageSize: number,
+    sorting: SortingState
+  ) => {
+
+    setPageIndex(pageIndex + 1);
+    setPageSize(pageSize);
+    const sortColumn = sorting?.[0]?.id;
+    const sortOrder = sorting?.[0]?.desc ? "desc" : "asc";
+    console.log("sortOrder: ", sortOrder);
+    console.log("sortColumn: ", sortColumn);
+    setSortOrder(sortOrder);
+    setSortField(sortColumn);
+
+    // fetchDataFromServer({ pageIndex, pageSize, sortColumn, sortOrder });
   };
 
   useEffect(() => {
     fetch(`${API_URL}/api/subject_list`)
       .then((res) => res.json())
-      .then((data) => setPeople(data.subjects.map((p: any) => p.subject_name)))
+      .then((data) => {
+        let options = [
+          {
+            value: "",
+            label: "Select Person",
+          },
+        ];
+        options.push(
+          ...data.subjects.map((p: any) => ({
+            value: p.subject_name,
+            label: p.subject_name,
+          }))
+        );
+        setpersonOptions(options);
+        setPeople(data.subjects.map((p: any) => p.subject_name));
+      })
       .catch(() => setPeople([]));
 
     fetch(`${API_URL}/api/camera_list`)
       .then((res) => res.json())
       .then((data) => {
-        // At this point, `data` is the parsed JSON from /api/camera_list
+        // At this point, `data` is the parsed JSON from /api/camera_listAPI_URL
         // Suppose `data.cameras` is an array of objects like { camera_name, tag }
         const cameraNames = data.cameras.map((c: any) => c.camera_name);
         const cameraTags = data.cameras.map((c: any) => c.tag);
 
         setCameras(cameraNames);
         setTags(cameraTags);
+
+        setgroupedTagOption(
+          data.cameras.reduce((acc: any, cam: any) => {
+            if (!acc[cam.tag]) {
+              acc[cam.tag] = [];
+            }
+            acc[cam.tag].push(cam);
+            return acc;
+          }, {})
+        );
       })
       .catch(() => {
         setCameras([]);
         setTags([]);
       });
   }, []);
-  const personOptions = people.map((person) => ({
-    value: person,
-    label: person,
-  }));
-
-  const cameraOptions = cameras.map((camera) => ({
-    value: camera,
-    label: camera,
-  }));
-
-  const tagOptions = tags.map((tag) => ({
-    value: tag,
-    label: tag,
-  }));
 
   // re-fetch on any dependency change
   useEffect(() => {
-    setLoading(true);
-    async function doFetch() {
-      try {
-        fetchData();
-      } finally {
-        setLoading(false);
-      }
+    fetchData();
+  }, [pageIndex, pageSize, sortOrder]); // now the callback itself is sync
+  useEffect(() => {
+    let options = [
+      {
+        value: "",
+        label: "Select Tag",
+      },
+    ];
+    options.push(
+      ...Object.keys(groupedTagOption).map((tag) => {
+        return { value: tag, label: tag };
+      })
+    );
+    settagOptions(options);
+  }, [groupedTagOption]);
+
+  // re-fetch on any dependency change
+  useEffect(() => {
+    let options = [
+      {
+        value: "",
+        label: "Select Camera",
+      },
+    ];
+    if (selectedTag) {
+      options.push(
+        ...groupedTagOption[selectedTag].map((c: any) => {
+          return {
+            value: c.camera_name,
+            label: c.camera_name,
+          };
+        })
+      );
+    } else if (selectedTag !== "" && tagOptions.length > 1) {
+      options.push(
+        ...groupedTagOption[Object.keys(groupedTagOption)[1]].map((c: any) => {
+          return {
+            value: c.camera_name,
+            label: c.camera_name,
+          };
+        })
+      );
     }
-    doFetch();
-  }, [selectedTag, pageIndex, pageSize]); // now the callback itself is sync
+    setcameraOptions(options);
+  }, [selectedTag, tagOptions]); // now the callback itself is sync
+
+  const handleSubmit = () => {
+    try {
+      setPageIndex(1);
+      
+      fetchData();
+
+      setSortField("timestamp");
+      setSortOrder("desc");
+    } finally {
+    }
+  };
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -226,6 +381,44 @@ const DetectionTable: React.FC = () => {
       setSortOrder("asc");
     }
     setPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setStartDate(
+      format(
+        setMilliseconds(
+          setSeconds(
+            setMinutes(
+              setHours(new Date(), 0), // subtract 1 day, set hour to 23
+              0
+            ),
+            0
+          ),
+          0
+        ),
+        dateFormateStr
+      )
+    );
+    setEndDate(
+      format(
+        setMilliseconds(
+          setSeconds(
+            setMinutes(
+              setHours(new Date(), 23), // subtract 1 day, set hour to 23
+              59
+            ),
+            0
+          ),
+          0
+        ),
+        dateFormateStr
+      )
+    );
+    setSelectedSubject("");
+    setSelectedCamera("");
+    setSelectedTag("");
+    
+    handleSubmit();
   };
 
   return (
@@ -286,14 +479,6 @@ const DetectionTable: React.FC = () => {
               onChange={setSelectedSubject}
             />
 
-            {/* 3) Camera name dropdown: */}
-            <Select
-              label="Camera"
-              options={cameraOptions}
-              value={selectedCamera}
-              onChange={setSelectedCamera}
-            />
-
             {/* 4) Camera tag dropdown: */}
             <Select
               label="Tag"
@@ -302,120 +487,33 @@ const DetectionTable: React.FC = () => {
               onChange={setSelectedTag}
               // disabled={!selectedCamera}
             />
-           <SearchIcon size={80} />
+
+            {/* 3) Camera name dropdown: */}
+            <Select
+              label="Camera"
+              options={cameraOptions}
+              value={selectedCamera}
+              onChange={setSelectedCamera}
+            />
+
+            <div className="flex items-center" onClick={() => handleSubmit()}>
+              <SearchIcon size={30} />
+            </div>
+
+            <div className="flex items-center" onClick={() => handleResetSearch()}>
+              <XIcon size={30} />
+            </div>
           </div>
         </div>
         <ReactTable
           rows={data}
-          columns={[
-            {
-              accessorKey: "id",
-              header: "ID",
-            },
-            {
-              accessorKey: "subject",
-              header: "Person Name",
-            },
-            {
-              accessorKey: "camera_name",
-              header: "Camera Name",
-            },
-            {
-              accessorKey: "camera_tag",
-              header: "Camera Tag",
-            },
-            {
-              accessorKey: "det_score",
-              header: "Detection Score",
-            },
-            {
-              accessorKey: "distance",
-              header: "Distance From Known",
-            },
-            {
-              accessorKey: "timestamp",
-              header: "Timestamp",
-            },
-          ]}
+          columns={columnDef}
           pageIndex={pageIndex}
           pageSize={pageSize}
-          pageSizes={[1, 10, 20, 30]}
-          totalCount={totalRowsCount}
-          onPaginationChange={(newPage, newSize) => {
-            setPageIndex(newPage);
-            setPageSize(newSize);
-          }}
+          pageSizes={[1, 10, 20, 30, 50, 100, 10000000000]}
+          totalCount={totalPageCount}
+          onPaginationChange={(page, size, sorting) => handlePaginationAndSorting(page, size, sorting)}
         />
-
-        {false && (
-          <Table
-            headers={[
-              "ID",
-              "Person Name",
-              "Camera Name",
-              "Camera Tag",
-              "Detection Score",
-              "Distance From Know",
-              "Timestamp",
-              "Image",
-            ]}
-          >
-            {data.map((d, i) => (
-              <tr key={d.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {d.id}
-                </td>
-                ?
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {d.subject}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {d.camera_name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {d.camera_tag}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {d.det_score.toFixed(1)}%
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {d.distance}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatTimestamp(parseTimestamp(d.timestamp))}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <img
-                    className="h-15 w-15 rounded-md object-cover"
-                    src={d.det_face}
-                    width={50}
-                    height={50}
-                    alt={`  ${d.subject}`}
-                  />
-                </td>
-              </tr>
-            ))}
-          </Table>
-        )}
-        {false && (
-          <div className="pagination">
-            <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={page === 1}
-            >
-              Prev
-            </button>
-            <span>
-              Page {page} of {Math.ceil(total / limit)}
-            </span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= Math.ceil(total / limit)}
-            >
-              Next
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

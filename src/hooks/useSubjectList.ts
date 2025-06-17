@@ -40,7 +40,10 @@ export function useSubjectList(
   const filtered = subjects.filter((subj) => {
     const matchesText =
       subj.subject_name.toLowerCase().includes(filterText.toLowerCase()) ||
-      subj.email.toLowerCase().includes(filterText.toLowerCase());
+      subj.email.toLowerCase().includes(filterText.toLowerCase()) ||
+      subj.age.toString().toLowerCase().includes(filterText) ||
+      subj.gender.toLowerCase().includes(filterText.toLowerCase()) ||
+      subj.phone.toLowerCase().includes(filterText.toLowerCase());;
     const matchesSelect = !selectedName || subj.subject_name === selectedName;
     return matchesText && matchesSelect;
   });
