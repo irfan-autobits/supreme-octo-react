@@ -10,7 +10,6 @@ interface PopupMenuProps {
 
 const PopupMenu: React.FC<PopupMenuProps> = ({ isOpen, onClose, className = "", children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
-    console.log("popup opened",isOpen)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

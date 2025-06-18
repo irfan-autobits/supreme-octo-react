@@ -7,7 +7,7 @@ import AddCameraModal from "../features/Cameras/AddCameraModal";
 import LiveFeed from "../features/Cameras/LiveFeed";
 import SettingToggle from "../features/Cameras/SettingToggle";
 import EditCameraModal from "../features/Cameras/EditCameraModal";
-import DetectionTable from "../features/DetectionTab/DetTab"
+import DetectionTable from "../features/DetectionTab/DetTab";
 import { useQuery } from "@tanstack/react-query";
 import socket from "../utils/socket";
 
@@ -31,7 +31,9 @@ const CameraManager: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState<boolean>(false);
   const [cameraList, setCameraList] = useState<Camera[]>([]);
   const [camEnabled, setCamEnabled] = useState<Record<string, boolean>>({});
-  const [activeModal, setActiveModal] = useState<"none" | "add" | "edit">("none");
+  const [activeModal, setActiveModal] = useState<"none" | "add" | "edit">(
+    "none"
+  );
   const [cameraFeeds, setCameraFeeds] = useState<FeedMap>({});
   // Note: editingCamera is either an object _or_ null
   const [editingCamera, setEditingCamera] = useState<EditCamera | null>(null);
@@ -106,7 +108,7 @@ const CameraManager: React.FC = () => {
   // ─── “Remove Camera” POST ───────────────────────────────────
   const handleRemoveCamera = (name: string) => {
     if (!window.confirm("Do you want to Delete this Camera?")) return;
-    post("/api/remove_camera", { camera_name: name }).then(fetchCameras)
+    post("/api/remove_camera", { camera_name: name }).then(fetchCameras);
   };
 
   // ─── “Edit Camera” POST ───────────────────────────────────
@@ -128,7 +130,6 @@ const CameraManager: React.FC = () => {
     setEditingCamera(cam);
     setActiveModal("edit");
     console.log("📝 Editing camera:", cam);
-    
   };
 
   // ─── “Start/Stop Camera” ───────────────────────────────────
@@ -167,7 +168,11 @@ const CameraManager: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Camera Manager</h1>
         <div className="flex">
-          <SettingToggle settingKey="RECOGNIZE" label="Enable Detection" setIsDetecting={setIsDetecting} />
+          <SettingToggle
+            settingKey="RECOGNIZE"
+            label="Enable Detection"
+            setIsDetecting={setIsDetecting}
+          />
           <Button
             className="ml-2 mr-2"
             variant="primary"
@@ -181,15 +186,28 @@ const CameraManager: React.FC = () => {
           </Button>
 
           <div className="inline-flex border rounded-md overflow-hidden">
-          <Button variant="secondary" icon={<RotateCcw size={16} />} onClick={handleRestartAll} className="rounded-none rounded-l-md">
-            Restart All
-          </Button>
-          <Button variant="secondary" onClick={handleStartAll} className="rounded-none border-l">
-            Start All
-          </Button>
-          <Button variant="secondary" onClick={handleStopAll} className="rounded-none border-l rounded-r-md">
-            Stop All
-          </Button>
+            <Button
+              variant="secondary"
+              icon={<RotateCcw size={16} />}
+              onClick={handleRestartAll}
+              className="rounded-none rounded-l-md"
+            >
+              Restart All
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleStartAll}
+              className="rounded-none border-l"
+            >
+              Start All
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleStopAll}
+              className="rounded-none border-l rounded-r-md"
+            >
+              Stop All
+            </Button>
           </div>
         </div>
       </div>
@@ -197,29 +215,35 @@ const CameraManager: React.FC = () => {
       {/* ─── Camera list + Live‐feed side‐by‐side ───────────────── */}
       <div className="flex space-x-4">
         {/* Left panel: list of cards */}
-        <div className="w-80 flex flex-col space-y-4 overflow-auto">
-          {cameraList.map((cam) => (
-            <CameraCard
-              key={cam.camera_name}
-              camera={{
-                id: cam.camera_name.length,
-                name: cam.camera_name,
-                tag: cam.tag, // if your backend has a tag field, pull it in `cameraList`
-                status: camEnabled[cam.camera_name] ? "active" : "inactive",
-              }}
-              onToggle={(name, action) =>
-                action === "start"
-                  ? handleStartCamera(name)
-                  : handleStopCamera(name)
-              }
-              onRemove={handleRemoveCamera}
-              onOpenFeed={handleOpenFeed}
-              onCloseFeed={handleCloseFeed}
-              activeFeed={activeFeed}
-              onEdit={onEditHandle}
-            />
-          ))}
-        </div>
+        {cameraList.length > 0 ? (
+          <div className="w-80 flex flex-col space-y-4 overflow-auto">
+            {cameraList.map((cam) => (
+              <CameraCard
+                key={cam.camera_name}
+                camera={{
+                  id: cam.camera_name.length,
+                  name: cam.camera_name,
+                  tag: cam.tag, // if your backend has a tag field, pull it in `cameraList`
+                  status: camEnabled[cam.camera_name] ? "active" : "inactive",
+                }}
+                onToggle={(name, action) =>
+                  action === "start"
+                    ? handleStartCamera(name)
+                    : handleStopCamera(name)
+                }
+                onRemove={handleRemoveCamera}
+                onOpenFeed={handleOpenFeed}
+                onCloseFeed={handleCloseFeed}
+                activeFeed={activeFeed}
+                onEdit={onEditHandle}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="w-80 border rounded-lg flex justify-center items-center text-zinc-400">
+            No Cameras
+          </div>
+        )}
 
         {/* Right panel: live‐view pane (shows JPEG frames) */}
         <div className="flex-1 p-4 bg-white rounded-lg shadow overflow-auto shadow-sm">
@@ -228,11 +252,10 @@ const CameraManager: React.FC = () => {
             cameraFeeds={cameraFeeds}
             onClose={handleCloseFeed}
           />
-          <DetectionTable 
-          activeCameraName={activeFeed}
-          isDetecting={isDetecting}           
+          <DetectionTable
+            activeCameraName={activeFeed}
+            isDetecting={isDetecting}
           />
-          
         </div>
       </div>
 

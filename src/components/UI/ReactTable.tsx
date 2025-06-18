@@ -76,8 +76,14 @@ export const ReactTable = <TData extends RowData>({
   useEffect(() => {
     onPaginationChange(pagination.pageIndex, pagination.pageSize, sorting);
     setSorting(sorting);
-    console.log("sorting: ", sorting);
-  }, [pagination.pageIndex, pagination.pageSize, sorting]); // <-- add `sorting`
+  }, [pagination, sorting]); // <-- add `sorting`
+
+  useEffect(() => {
+    setPagination({
+      pageIndex,
+      pageSize,
+    });
+  }, [pageIndex, pageSize]); // <-- add `sorting`
 
   const table = useReactTable<TData>({
     data,
@@ -119,7 +125,6 @@ export const ReactTable = <TData extends RowData>({
   color: #000;
   display: flex;
   flex-direction: column;
-  padding: 10px;
   width: 100%;
   flex: 1;
 }

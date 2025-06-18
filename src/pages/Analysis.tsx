@@ -67,7 +67,7 @@ const Analysis: React.FC = () => {
       .finally(() => setDateLoading(false));
   };
 
-    const ganttTasks: GanttTask[] = camTmln.flatMap((cam) => [
+  const ganttTasks: GanttTask[] = camTmln.flatMap((cam) => [
     ...cam.activePeriods.map((p) => ({
       camera: cam.camera,
       name: "Camera On",

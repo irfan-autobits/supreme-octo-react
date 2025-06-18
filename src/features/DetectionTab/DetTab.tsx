@@ -74,7 +74,7 @@ const DetectionTable: React.FC<{
       header: "Datetime",
     },
   ]);
-  const [pageIndex, setPageIndex] = useState<number>(1);
+  // const [pageIndex, setPageIndex] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [totalPageCount, setTotalPageCount] = useState<number>(0);
 
@@ -88,15 +88,22 @@ const DetectionTable: React.FC<{
   const ITEMS_PER_PAGE = 10;
   const limit = ITEMS_PER_PAGE; // no need for useState
   const isDetectingRef = useRef(isDetecting);
+  const pageIndexRef = useRef(0);
 
   useEffect(() => {
     isDetectingRef.current = isDetecting;
   }, [isDetecting]);
 
+  // useEffect(() => {
+  //   console.log("pageIndex eff: ", pageIndex);
+  // }, [pageIndex]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       console.log("Fetching data for", activeCameraName);
-      fetchData();
+      if(activeCameraName) {
+        fetchData();
+      }
     }, 1000);
     return () => {
       console.log("Clearing interval for", activeCameraName);
@@ -143,9 +150,10 @@ const DetectionTable: React.FC<{
     );
     let formatedstartDate = parse(startDate, dateFormateStr, new Date());
     let formatedendDate = parse(endDate, dateFormateStr, new Date());
+    console.log("pageIndex fetc: ", pageIndexRef);
 
     const qs = {
-      page: pageIndex,
+      page: pageIndexRef.current + 1,
       // limit: 100,
       offset: pageSize,
       subject: "",
@@ -204,7 +212,9 @@ const DetectionTable: React.FC<{
     pageSize: number,
     sorting: SortingState
   ) => {
-    setPageIndex(pageIndex + 1);
+
+    pageIndexRef.current = pageIndex;
+    // setPageIndex(pageIndex);
     setPageSize(pageSize);
     const sortColumn = sorting?.[0]?.id;
     const sortOrder = sorting?.[0]?.desc ? "desc" : "asc";
@@ -219,7 +229,6 @@ const DetectionTable: React.FC<{
   const PersonNameAndPhoto: React.FC<{
     value: { name: string; photoUrl: string };
   }> = ({ value }) => {
-    console.log(value); // optional for debugging
 
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -227,9 +236,9 @@ const DetectionTable: React.FC<{
           src={value.photoUrl}
           alt={value.name}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
+            width: "32px",
+            height: "32px",
+            borderRadius: "32px",
             objectFit: "cover",
           }}
         />
@@ -247,9 +256,9 @@ const DetectionTable: React.FC<{
         <ReactTable
           rows={data}
           columns={columnDef}
-          pageIndex={pageIndex}
+          pageIndex={pageIndexRef.current}
           pageSize={pageSize}
-          pageSizes={[1, 10, 20, 30, 50, 100, 10000000000]}
+          pageSizes={[1, 10, 20, 30, 50, 100]}
           totalCount={totalPageCount}
           onPaginationChange={(page, size, sorting) =>
             handlePaginationAndSorting(page, size, sorting)
