@@ -8,7 +8,7 @@ interface Camera {
   id: number;
   name: string;
   tag: string;
-  status: string;
+  status: string | boolean;
 }
 
 // Here, onEdit is a function that gets passed an object { camera_name, tag }:
@@ -31,7 +31,7 @@ const CameraCard: React.FC<CameraCardProps> = ({
   activeFeed,
   onEdit,
 }) => {
-  const isActive = camera.status === "active";
+  const isActive = camera.status;
   const isFeedOpen = activeFeed === camera.name;
 
   const [showPopup, setShowPopup] = React.useState(false);
@@ -48,10 +48,12 @@ const CameraCard: React.FC<CameraCardProps> = ({
         <div className="flex-1 bg-gray-100 rounded-md mb-4 flex items-center justify-center">
           <div className="w-[384px] h-32 p-2 flex items-center justify-center flex-col">
             <div className="w-full flex items-start">
-              {isActive ? (
+              {isActive === true ? (
                 <div className="h-[11px] w-[11px] rounded-[50%] bg-green-500"></div>
+              ) : isActive === false ? (
+                <div className="h-[11px] w-[11px] rounded-[50%] bg-red-500"></div>
               ) : (
-                <div className="h-[11px] w-[11px] rounded-[50%] bg-red-400"></div>
+                <div className="h-[11px] w-[11px] rounded-[50%] bg-yellow-500"></div>
               )}
             </div>
             <div className="flex items-center justify-center flex-1 text-black-500 font-medium relative">
@@ -63,11 +65,27 @@ const CameraCard: React.FC<CameraCardProps> = ({
 
         <div className="flex space-x-2">
           <Button
-            variant={isActive ? "lightGreenoutline" : "lightGreen"}
+            variant={
+              isActive === true
+                ? "lightGreen"
+                : isActive === false
+                ? "lightGreenoutline"
+                : "disabled"
+            }
             className="flex-1"
-            onClick={() => onToggle(camera.name, isActive ? "stop" : "start")}
+            onClick={() => {
+              isActive === true
+                ? onToggle(camera.name, "stop")
+                : isActive === false
+                ? onToggle(camera.name, "start")
+                : null;
+            }}
           >
-            {isActive ? "Stop Cam" : "Start Cam"}
+            {isActive === true
+              ? "Stop Cam"
+              : isActive === false
+              ? "Start Cam"
+              : camera.status}
           </Button>
 
           <Button

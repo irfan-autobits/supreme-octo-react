@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'lightGreen' | 'lightGreenoutline' | 'darkGreen' | 'darkGreenoutline' | 'outline';
+  variant?: 'primary' | 'secondary' | 'lightGreen' | 'lightGreenoutline' | 'disabled' | 'darkGreen' | 'darkGreenoutline' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   icon?: React.ReactNode;
@@ -19,6 +19,7 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors';
   
   const variantClasses = {
+    disabled: 'bg-zinc-400 text-white',
     lightGreen: 'bg-[#85AF49] text-white hover:bg-transparent hover:text-[#85AF49] hover:border hover:border-[#85AF49]',
     lightGreenoutline: 'bg-transparent border border-[#85AF49] text-[#85AF49] hover:bg-[#85AF49] hover:text-white',
     darkGreen: 'bg-[#43893D] text-white hover:bg-transparent hover:text-[#43893D] hover:border hover:border-[#43893D]',

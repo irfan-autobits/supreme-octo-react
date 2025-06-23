@@ -1,8 +1,9 @@
-// project/src/utils/time.tsx
+// src/utils/time.tsx
 /**
  * Format a Date as "MMM dd, yyyy, hh:mm" in the user’s locale.
- */
-export function formatShort(date: Date): string {
+ *  or formatShort
+*/
+export function formatTimestamp(date: Date): string {
   return date.toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -28,16 +29,23 @@ export function parseTimestamp(input: string | number): Date {
   return typeof input === 'number' ? new Date(input) : new Date(input);
 }
 
-/**
- * Format a Date as "MMM dd, yyyy, hh:mm" in the user’s locale.
- * Identical to formatShort but keeps your previous name.
- */
-export function formatTimestamp(date: Date): string {
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+/** Converts a JS Date or ISO string to a UTC start-of-day ISO string */
+export function toUTCStart(date: string | Date): string {
+  const d = new Date(date);
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)).toISOString();
+}
+
+/** Converts a JS Date or ISO string to a UTC end-of-day ISO string */
+export function toUTCEnd(date: string | Date): string {
+  const d = new Date(date);
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)).toISOString();
+}
+
+/** Returns whether two dates fall on the same calendar day */
+export function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }

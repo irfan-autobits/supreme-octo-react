@@ -142,11 +142,11 @@ const EditSubjectModal: React.FC<Props> = ({
       });
 
       // d) Wait for all three groups (deletes, uploads, metadata)
-      // await Promise.all([
-      //   ...uploadPromises,
-      //   ...deletePromises,
-      //   metadataPromise,
-      // ]);
+      await Promise.all([
+        ...uploadPromises,
+        ...deletePromises,
+        metadataPromise,
+      ]);
 
       // e) After success, parent re-fetches and modal closes
       onEditSuccess();

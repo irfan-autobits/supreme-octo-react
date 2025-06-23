@@ -6,7 +6,9 @@ import Login from './auth/components/Login';
 import Signup from './auth/components/Signup';
 import Logout from './auth/components/Logout';
 
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/Dashboard_backup';
+// import Dashboard from './pages/Dashboard';
+// import Dashboard from './pages/newDashboard';
 import Analysis from './pages/Analysis';
 import CameraManager from './pages/CameraManager';
 import PersonTracker from './pages/PersonTracker';

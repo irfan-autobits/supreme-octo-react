@@ -63,8 +63,6 @@ export default function SubjectManager() {
 
   if (loading) return <div>Loading subjects…</div>;
 
-  const noSubjects = currentPageItems.length === 0;
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -97,7 +95,7 @@ export default function SubjectManager() {
           }}
         />
 
-        {noSubjects ? (
+        {currentPageItems.length === 0 ? (
           <div className="flex justify-center items-center h-40 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-gray-500">No subjects found</p>
           </div>

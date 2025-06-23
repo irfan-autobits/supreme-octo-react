@@ -3,9 +3,6 @@ import React, { useState, useEffect } from "react";
 import Select from "../components/UI/Select";
 import DatePicker from "../components/UI/DatePicker";
 import Button from "../components/UI/Button";
-import ReactFlow, { Background, Controls } from "reactflow";
-import CustomNode from "../features/Persons/CustomNode";
-import { parseTimestamp, formatTimestamp, localToUtcIso } from "../utils/time";
 import { format, parseISO } from "date-fns";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -34,12 +31,12 @@ const PersonTracker: React.FC = () => {
   const [movementNodes, setmovementNodes] = useState<any[]>([]);
 
   const fetchMovementHistory = async (personName: string | undefined) => {
-    setdataInfo("Loading...");
-    if (!personName) return;
+    if (!personName || fromDate === "" || fromDate === "") return;
+    setdataInfo("Loading... ");
     try {
       const qs = new URLSearchParams({
-        start: localToUtcIso(fromDate),
-        end: localToUtcIso(endDate),
+        start: new Date(fromDate).toISOString(),
+        end: new Date(endDate).toISOString(),
       }).toString();
       const response = await fetch(
         `${API_URL}/api/movement/${encodeURIComponent(personName)}?${qs}`

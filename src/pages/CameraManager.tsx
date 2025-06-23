@@ -30,7 +30,7 @@ interface EditCamera {
 const CameraManager: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState<boolean>(false);
   const [cameraList, setCameraList] = useState<Camera[]>([]);
-  const [camEnabled, setCamEnabled] = useState<Record<string, boolean>>({});
+  const [camEnabled, setCamEnabled] = useState<Record<string, boolean | string>>({});
   const [activeModal, setActiveModal] = useState<"none" | "add" | "edit">(
     "none"
   );
@@ -133,14 +133,18 @@ const CameraManager: React.FC = () => {
   };
 
   // ─── “Start/Stop Camera” ───────────────────────────────────
-  const handleStartCamera = (name: string) =>
+  const handleStartCamera = (name: string) => {
+    setCamEnabled((p) => ({ ...p, [name]: "Starting..." }))
     post("/api/start_proc", { camera_name: name }).then(() =>
       setCamEnabled((p) => ({ ...p, [name]: true }))
     );
-  const handleStopCamera = (name: string) =>
+  }
+  const handleStopCamera = (name: string) => {
+    setCamEnabled((p) => ({ ...p, [name]: "Stopping..." }))
     post("/api/stop_proc", { camera_name: name }).then(() =>
       setCamEnabled((p) => ({ ...p, [name]: false }))
     );
+  }
 
   const handleStartAll = () => {
     fetch(`${API_URL}/api/start_all_proc`)
@@ -224,7 +228,7 @@ const CameraManager: React.FC = () => {
                   id: cam.camera_name.length,
                   name: cam.camera_name,
                   tag: cam.tag, // if your backend has a tag field, pull it in `cameraList`
-                  status: camEnabled[cam.camera_name] ? "active" : "inactive",
+                  status: camEnabled[cam.camera_name],
                 }}
                 onToggle={(name, action) =>
                   action === "start"

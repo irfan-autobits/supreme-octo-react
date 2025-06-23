@@ -429,9 +429,9 @@ const DetectionTable: React.FC = () => {
       <div className="bg-white flex flex-1 flex-col rounded-lg shadow-sm relative">
         <div className="flex-inline p-4 border-b border-gray-200 space-y-4">
           {/* 1) Date range: */}
-          <div className="flex gap-3 ">
+          <div className="flex gap-3 relative">
             {isOpenDatepicker === true && (
-              <div className="datepicker-wrapper">
+              <div className="datepicker-wrapper shadow-2xl">
                 <DateTimeRangePicker
                   from_date={from_date}
                   to_date={to_date}
