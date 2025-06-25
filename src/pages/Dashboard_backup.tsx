@@ -114,6 +114,7 @@ const Dashboard: React.FC = () => {
   const [subData, setSubData] = useState<
     DetectionStatsResponse["subject_stats"]
   >([]);
+  const [dailySubCount, setDailySubCount] = useState(0);
   const [camTmln, setCamTmln] = useState<CameraTimelineResponse["camData"]>([]);
   const [camRange, setCamRange] = useState<CameraTimelineResponse["range"]>({
     min: "",
@@ -126,6 +127,7 @@ const Dashboard: React.FC = () => {
   const [dateLoading, setDateLoading] = useState<boolean>(false);
   const [heatmapOffset, setHeatmapOffset] = useState(0); // 0 = ending today, 1 = older by 112, 2 = even older
   const [heatmapStart, setHeatmapStart] = useState<string>("");
+  const [dayTotalDetection, setDayTotalDetection] = useState(0);
   const [intervalType, setIntervalType] = useState<string>("hourly");
   const [heatmapData, setHeatmapData] = useState<
     { date: string; count: number }[]
@@ -258,6 +260,7 @@ const Dashboard: React.FC = () => {
         const stats = det.interval_stats ?? det.day_stats ?? [];
         setDayData(stats);
 
+        setDayTotalDetection(stats.reduce((sum, e) => sum + e.count , 0));        
         const camtl = camtlRes.data as CameraTimelineResponse;
         const camera_stats = det.camera_stats;
         const max = Math.max(...camera_stats.map((e) => e.count));
@@ -269,13 +272,11 @@ const Dashboard: React.FC = () => {
             target: nextHundred,
           }))
         );
-
-        console.log(camera_stats.map((e) => ({
-            ...e,
-            target: nextHundred,
-          })));
   
         setSubData(det.subject_stats);
+        console.log("subData :", det.subject_stats);
+        setDailySubCount(det.subject_stats.filter(e => e.subject != "Unknown").reduce((sum, e) => sum + 1, 0));
+
         setCamTmln(camtl.camData);
         setCamRange(camtl.range);
       })
@@ -446,21 +447,21 @@ const Dashboard: React.FC = () => {
             />
             <WidgetCard
               title="Total Detections"
-              value={sysstats.total_detections || "–"}
+              value={`${dayTotalDetection}/${sysstats.total_detections}` || "–"}
               onClickHandler={() => navigate("/detection-tab")}
               isRedirectable={true}
             />
             <WidgetCard
               title="Total Subjects"
-              value={sysstats.subjects.length}
+              value={`${dailySubCount}/${sysstats.subjects.length}` || "-"}
               onClickHandler={() => navigate("/subject-manager")}
               isRedirectable={true}
             />
-            <WidgetCard
+            {/* <WidgetCard
               title="Model Used"
               value={sysstats.model || "–"}
               isRedirectable={false}
-            />
+            /> */}
           </div>
           <div className="m-2 bg-white flex-1 p-6 rounded-lg shadow-sm gap-3 flex flex-col">
             <div className="flex gap-3">
@@ -581,7 +582,7 @@ const Dashboard: React.FC = () => {
             <div className="flex gap-3">
               <div className="font-bold">Traffic by Camera</div>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,_minmax(100px,_1fr))] gap-4">
+            {/* <div className="grid grid-cols-[repeat(auto-fill,_minmax(100px,_1fr))] gap-4">
               {camData.map((e) => (
                 <div className="flex flex-1 items-center">
                   <div className="flex-1 text-sm font-bold mr-2">
@@ -598,7 +599,30 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> */}
+            <div className="highcharts-container">
+              <HighchartsReact
+                highcharts={Highcharts}
+                options={ChartOption({
+                  type: "bar",
+                  ht: "280px",
+                  lgd: false,
+                  xCatg: camData.map((e) => e.camera), //[{y: 150}, {y: 250}],
+                  yCatg: null,
+                  sers: [
+                    {
+                      name: "Camera",
+                      data: camData.map((e) => {
+                        return { y: e.count };
+                      }), //[{y: 150}, {y: 250}],
+                      color: "#85AF49",
+                    },
+                  ],
+                  maxVal: null,
+                  minValEn: false,
+                })}
+              />
+            </div>            
           </div>
         </div>
       </div>

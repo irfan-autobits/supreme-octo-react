@@ -20,6 +20,7 @@ interface CameraCardProps {
   onCloseFeed: (name: string) => void;
   activeFeed?: string;
   onEdit: (cam: { camera_name: string; tag: string }) => void;
+  cameraFeeds: Record<string, { imageUrl: string }>;
 }
 
 const CameraCard: React.FC<CameraCardProps> = ({
@@ -30,11 +31,13 @@ const CameraCard: React.FC<CameraCardProps> = ({
   onCloseFeed,
   activeFeed,
   onEdit,
+  cameraFeeds,
 }) => {
   const isActive = camera.status;
   const isFeedOpen = activeFeed === camera.name;
-
+  const feed = cameraFeeds[camera.name];
   const [showPopup, setShowPopup] = React.useState(false);
+  const liveFeed = cameraFeeds[camera.name]?.imageUrl;
 
   return (
     <div
@@ -45,20 +48,40 @@ const CameraCard: React.FC<CameraCardProps> = ({
       <div className="flex flex-col h-full">
         <div className="flex justify-between items-center mb-2"></div>
 
-        <div className="flex-1 bg-gray-100 rounded-md mb-4 flex items-center justify-center">
-          <div className="w-[384px] h-32 p-2 flex items-center justify-center flex-col">
-            <div className="w-full flex items-start">
-              {isActive === true ? (
-                <div className="h-[11px] w-[11px] rounded-[50%] bg-green-500"></div>
-              ) : isActive === false ? (
-                <div className="h-[11px] w-[11px] rounded-[50%] bg-red-500"></div>
-              ) : (
-                <div className="h-[11px] w-[11px] rounded-[50%] bg-yellow-500"></div>
-              )}
+        <div className="flex-1 rounded-md mb-4 flex flex-col">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <div
+                className={`h-[10px] w-[10px] rounded-full ${
+                  isActive === true
+                    ? "bg-green-500"
+                    : isActive === false
+                    ? "bg-red-500"
+                    : "bg-yellow-500"
+                }`}
+              ></div>
+              <div className="text-sm font-semibold text-gray-700 truncate max-w-[180px]">
+                {camera.name}
+              </div>
             </div>
+          </div>
+
+          <div className="bg-gray-100 flex items-center justify-center flex-col">
             <div className="flex items-center justify-center flex-1 text-black-500 font-medium relative">
-              <CCTVCam height="100px" fill="#dbdbdb" />
-              <div className="absolute font-bold text-xl">{camera.name}</div>
+              {/* <CCTVCam height="100px" fill="#dbdbdb" /> */}
+
+              <div className="w-full min-h-[150px] flex items-center justify-center bg-zinc-100 rounded-md">
+                {liveFeed ? (
+                  <img
+                    src={liveFeed}
+                    alt={`Live feed: ${camera.name}`}
+                    className="h-full rounded-md object-contain"
+                  />
+                ) : (
+                  <span className="text-zinc-400 text-xs">No Preview</span>
+                  // <span className="text-zinc-400 text-xs animate-pulse">Waiting for live feed...</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -67,9 +90,9 @@ const CameraCard: React.FC<CameraCardProps> = ({
           <Button
             variant={
               isActive === true
-                ? "lightGreen"
+                ? "lightRed"
                 : isActive === false
-                ? "lightGreenoutline"
+                ? "lightGreen"
                 : "disabled"
             }
             className="flex-1"

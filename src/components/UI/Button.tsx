@@ -22,6 +22,8 @@ const Button: React.FC<ButtonProps> = ({
     disabled: 'bg-zinc-400 text-white',
     lightGreen: 'bg-[#85AF49] text-white hover:bg-transparent hover:text-[#85AF49] hover:border hover:border-[#85AF49]',
     lightGreenoutline: 'bg-transparent border border-[#85AF49] text-[#85AF49] hover:bg-[#85AF49] hover:text-white',
+    lightRed: 'bg-red-400 text-white hover:bg-transparent hover:text-red-500 hover:border hover:border-red-500',
+    lightRedoutline: 'bg-transparent border border-red-500 text-red-500 hover:bg-red-500 hover:text-white',    
     darkGreen: 'bg-[#43893D] text-white hover:bg-transparent hover:text-[#43893D] hover:border hover:border-[#43893D]',
     darkGreenoutline: 'bg-transparent border border-[#43893D] text-[#43893D] hover:bg-[#43893D] hover:text-white',
     // ✅ Green Primary

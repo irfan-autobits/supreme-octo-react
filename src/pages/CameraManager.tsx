@@ -30,7 +30,9 @@ interface EditCamera {
 const CameraManager: React.FC = () => {
   const [isDetecting, setIsDetecting] = useState<boolean>(false);
   const [cameraList, setCameraList] = useState<Camera[]>([]);
-  const [camEnabled, setCamEnabled] = useState<Record<string, boolean | string>>({});
+  const [camEnabled, setCamEnabled] = useState<
+    Record<string, boolean | string>
+  >({});
   const [activeModal, setActiveModal] = useState<"none" | "add" | "edit">(
     "none"
   );
@@ -53,15 +55,21 @@ const CameraManager: React.FC = () => {
   useEffect(() => {
     fetchCameras();
   }, []);
-  useEffect(() => {
-    console.log("isDetecting changed:", isDetecting);
-  }, [isDetecting]);
 
   // listen for socket frames
   useEffect(() => {
     const handler = ({ camera_name, image }: any) => {
       const blob = new Blob([image], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
+
+      // Store blob as Base64 string in localStorage for persistent preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64data = reader.result as string;
+        localStorage.setItem(`frame:${camera_name}`, base64data);
+      };
+      reader.readAsDataURL(blob);
+
       setCameraFeeds((prev) => {
         const oldUrl = prev[camera_name]?.imageUrl;
         if (oldUrl) URL.revokeObjectURL(oldUrl);
@@ -88,6 +96,17 @@ const CameraManager: React.FC = () => {
       console.error(err);
     }
   };
+  // for persistent preview
+  useEffect(() => {
+    const map: FeedMap = {};
+    cameraList.forEach((cam) => {
+      const saved = localStorage.getItem(`frame:${cam.camera_name}`);
+      if (saved) {
+        map[cam.camera_name] = { imageUrl: saved };
+      }
+    });
+    setCameraFeeds(map);
+  }, [cameraList]);
 
   const post = (path: string, body: any) =>
     fetch(`${API_URL}${path}`, {
@@ -134,17 +153,17 @@ const CameraManager: React.FC = () => {
 
   // ─── “Start/Stop Camera” ───────────────────────────────────
   const handleStartCamera = (name: string) => {
-    setCamEnabled((p) => ({ ...p, [name]: "Starting..." }))
+    setCamEnabled((p) => ({ ...p, [name]: "Starting..." }));
     post("/api/start_proc", { camera_name: name }).then(() =>
       setCamEnabled((p) => ({ ...p, [name]: true }))
     );
-  }
+  };
   const handleStopCamera = (name: string) => {
-    setCamEnabled((p) => ({ ...p, [name]: "Stopping..." }))
+    setCamEnabled((p) => ({ ...p, [name]: "Stopping..." }));
     post("/api/stop_proc", { camera_name: name }).then(() =>
       setCamEnabled((p) => ({ ...p, [name]: false }))
     );
-  }
+  };
 
   const handleStartAll = () => {
     fetch(`${API_URL}/api/start_all_proc`)
@@ -240,6 +259,7 @@ const CameraManager: React.FC = () => {
                 onCloseFeed={handleCloseFeed}
                 activeFeed={activeFeed}
                 onEdit={onEditHandle}
+                cameraFeeds={cameraFeeds}
               />
             ))}
           </div>
