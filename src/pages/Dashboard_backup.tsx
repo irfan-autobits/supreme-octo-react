@@ -260,7 +260,7 @@ const Dashboard: React.FC = () => {
         const stats = det.interval_stats ?? det.day_stats ?? [];
         setDayData(stats);
 
-        setDayTotalDetection(stats.reduce((sum, e) => sum + e.count , 0));        
+        setDayTotalDetection(stats.reduce((sum, e) => sum + e.count, 0));
         const camtl = camtlRes.data as CameraTimelineResponse;
         const camera_stats = det.camera_stats;
         const max = Math.max(...camera_stats.map((e) => e.count));
@@ -272,10 +272,14 @@ const Dashboard: React.FC = () => {
             target: nextHundred,
           }))
         );
-  
+
         setSubData(det.subject_stats);
         console.log("subData :", det.subject_stats);
-        setDailySubCount(det.subject_stats.filter(e => e.subject != "Unknown").reduce((sum, e) => sum + 1, 0));
+        setDailySubCount(
+          det.subject_stats
+            .filter((e) => e.subject != "Unknown")
+            .reduce((sum, e) => sum + 1, 0)
+        );
 
         setCamTmln(camtl.camData);
         setCamRange(camtl.range);
@@ -482,7 +486,7 @@ const Dashboard: React.FC = () => {
               <HighchartsReact
                 highcharts={Highcharts}
                 options={ChartOption({
-                  type: "line",
+                  type: "areaspline",
                   ht: "280px",
                   lgd: false,
                   xCatg: dayData.map((e) => {
@@ -499,7 +503,7 @@ const Dashboard: React.FC = () => {
                       data: dayData.map((e) => {
                         return { y: e.count };
                       }), //[{y: 150}, {y: 250}],
-                      color: "#000",
+                      color: "#85AF49",
                     },
                     // {
                     //   name: "Unique Detection",
@@ -622,7 +626,7 @@ const Dashboard: React.FC = () => {
                   minValEn: false,
                 })}
               />
-            </div>            
+            </div>
           </div>
         </div>
       </div>
@@ -762,15 +766,26 @@ const ChartOption = ({
       enabled: lgd,
     },
     plotOptions: {
-      series: {
-        animation: false,
-      },
-      heatmap: {
-        allowPointSelect: true,
-      },
-      column: {
-        pointPadding: 0.2,
-        borderWidth: 0,
+      series: { animation: false },
+      heatmap: { allowPointSelect: true },
+      column: { pointPadding: 0.2, borderWidth: 0 },
+      areaspline: {
+        color: "#32CD32",
+        fillColor: {
+          linearGradient: { x1: 0, x2: 0, y1: 0, y2: 1 },
+          stops: [
+            [0, "#32CD32"],
+            [1, "#32CD3200"],
+          ],
+        },
+        threshold: null,
+        marker: {
+          enabled: true, // turn them on
+          radius: 2, // size of each dot
+          fillColor: "#85AF49", // same green as your line
+          lineWidth: 1, // thickness of the border
+          lineColor: "#FFFFFF", // white border to separate from background
+        },
       },
     },
 
