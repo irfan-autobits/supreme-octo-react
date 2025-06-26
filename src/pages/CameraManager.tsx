@@ -1,5 +1,5 @@
 // project/src/pages/CameraManager.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Button from "../components/UI/Button";
 import { Plus, RotateCcw } from "lucide-react";
 import CameraCard from "../features/Cameras/CameraCard";
@@ -39,6 +39,7 @@ const CameraManager: React.FC = () => {
   const [cameraFeeds, setCameraFeeds] = useState<FeedMap>({});
   // Note: editingCamera is either an object _or_ null
   const [editingCamera, setEditingCamera] = useState<EditCamera | null>(null);
+  const lastWriteRef = useRef<Record<string, number>>({});
 
   // fetch "active" feed name every 500ms
   const { data: activeFeed } = useQuery({
@@ -59,16 +60,24 @@ const CameraManager: React.FC = () => {
   // listen for socket frames
   useEffect(() => {
     const handler = ({ camera_name, image }: any) => {
+      const now = Date.now();
+      const lastWrite = lastWriteRef.current[camera_name] || 0;
+
+      // Only update localStorage if at least 5 seconds passed since last write
+      if (now - lastWrite > 5000) {
+        const blob = new Blob([image], { type: "image/jpeg" });
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64data = reader.result as string;
+          localStorage.setItem(`frame:${camera_name}`, base64data);
+          lastWriteRef.current[camera_name] = now; // update the timestamp
+        };
+        reader.readAsDataURL(blob);
+      }
+
+      // Always update the in-memory live preview
       const blob = new Blob([image], { type: "image/jpeg" });
       const url = URL.createObjectURL(blob);
-
-      // Store blob as Base64 string in localStorage for persistent preview
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64data = reader.result as string;
-        localStorage.setItem(`frame:${camera_name}`, base64data);
-      };
-      reader.readAsDataURL(blob);
 
       setCameraFeeds((prev) => {
         const oldUrl = prev[camera_name]?.imageUrl;
