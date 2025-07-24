@@ -3,6 +3,7 @@ import React from "react";
 import { MoreHorizontal, Pen, Trash2 } from "lucide-react";
 import PopupMenu from "../../components/UI/PopupMenu";
 import { Subject } from "./types";
+const API_URL = import.meta.env.VITE_API_URL!;
 
 interface SubjectCardProps {
   subject: Subject;
@@ -80,10 +81,10 @@ const SubjectCard: React.FC<SubjectCardProps> = ({
         {subject.images.map((image) => (
           <div key={image.id} className="relative w-12 h-12 rounded-full border-2 border-white overflow-hidden">
             <img
-              src={image.url}
+              src={`${API_URL}${image.url}`}
               alt={`${subject.subject_name} profile`}
               className="w-full h-full object-cover cursor-pointer"
-              onClick={() => onImageClick(image.url)}
+              onClick={() => onImageClick(`${API_URL}${image.url}`)}
             />
           </div>
         ))}

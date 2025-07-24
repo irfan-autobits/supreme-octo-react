@@ -182,10 +182,7 @@ const DetectionTable: React.FC<{
               timestamp: datetime,
               subject: {
                 name: row.subject,
-                photoUrl: row.det_face.replace(
-                  "http://localhost:5757",
-                  API_URL
-                ),
+                photoUrl: API_URL + row.det_face,
               },
             };
           }) || []

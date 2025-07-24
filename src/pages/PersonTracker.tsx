@@ -160,7 +160,7 @@ const PersonTracker: React.FC = () => {
               <div>
                 <img
                   className="shadow-sm border border-zinc-200 w-[60px] h-[60px] rounded-[50%] object-cover"
-                  src={movementPerson.imgURL}
+                  src={`${API_URL}${movementPerson.imgURL}`}
                   // src="https://placehold.co/400"
                   alt="Preview"
                 />
