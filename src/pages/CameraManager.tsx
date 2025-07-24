@@ -49,7 +49,7 @@ const CameraManager: React.FC = () => {
       const j = await r.json();
       return j.active_camera;
     },
-    refetchInterval: 500,
+    refetchInterval: 5000,
   });
 
   // load camera list once (and whenever it changes)
