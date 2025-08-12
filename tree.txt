@@ -1,62 +1,103 @@
 .
-|-- .bolt
-|   |-- config.json
-|   `-- prompt
-|-- .env
-|-- eslint.config.js
-|-- .gitignore
-|-- index.html
-|-- package.json
-|-- package-lock.json
-|-- postcss.config.js
-|-- src
-|   |-- App.tsx
-|   |-- auth
-|   |   |-- AuthContext.tsx
-|   |   |-- components
-|   |   |   |-- Login.tsx
-|   |   |   |-- Logout.tsx
-|   |   |   `-- Signup.tsx
-|   |   |-- RequireAuth.tsx
-|   |   `-- useAuth.ts
-|   |-- components
-|   |   |-- Layout
-|   |   |   |-- Layout.tsx
-|   |   |   `-- Sidebar.tsx
-|   |   `-- UI
-|   |       |-- Button.tsx
-|   |       |-- Card.tsx
-|   |       |-- DatePicker.tsx
-|   |       |-- Input.tsx
-|   |       |-- Logo.tsx
-|   |       |-- Modal.tsx
-|   |       |-- Select.tsx
-|   |       `-- Table.tsx
-|   |-- features
-|   |   |-- Cameras
-|   |   |   |-- AddCameraModal.tsx
-|   |   |   `-- CameraCard.tsx
-|   |   |-- Persons
-|   |   |   `-- MeetingCard.tsx
-|   |   `-- Subjects
-|   |       `-- AddSubjectModal.tsx
-|   |-- index.css
-|   |-- main.tsx
-|   |-- pages
-|   |   |-- Analysis.tsx
-|   |   |-- CameraManager.tsx
-|   |   |-- Dashboard.tsx
-|   |   |-- DetectionTable.tsx
-|   |   |-- PersonTracker.tsx
-|   |   `-- SubjectManager.tsx
-|   |-- routes.tsx
-|   |-- utils
-|   |   `-- mockData.ts
-|   `-- vite-env.d.ts
-|-- tailwind.config.js
-|-- tsconfig.app.json
-|-- tsconfig.json
-|-- tsconfig.node.json
-`-- vite.config.ts
+├── .bolt
+│   ├── config.json
+│   └── prompt
+├── .env
+├── eslint.config.js
+├── .gitignore
+├── index.html
+├── package.json
+├── package-lock.json
+├── postcss.config.js
+├── Readme
+├── src
+│   ├── App.tsx           import routes from routes file and fallback logic
+│   ├── assets
+│   │   ├── icons
+│   │   │   ├── Security camera.svg
+│   │   │   └── svgs.tsx
+│   │   └── image 11.svg
+│   ├── auth
+│   │   ├── AuthContext.tsx    handle token ,store remove token from local storage
+│   │   ├── components
+│   │   │   ├── Login.tsx   handle user logins 
+│   │   │   ├── Logout.tsx
+│   │   │   └── Signup.tsx
+│   │   ├── RequireAuth.tsx     applys auth on routes
+│   │   └── useAuth.ts         check and expire auth
+│   ├── components
+│   │   ├── Layout
+│   │   │   ├── Layout.tsx  main dashboard layout
+│   │   │   └── Sidebar.tsx  sidebar in dashboard
+│   │   └── UI            all ui add on / plugins
+│   │       ├── Button.tsx
+│   │       ├── Card.tsx
+│   │       ├── DatePicker.tsx
+│   │       ├── DateRangePicker.tsx
+│   │       ├── GanttChart.tsx
+│   │       ├── Input.tsx
+│   │       ├── Logo.tsx
+│   │       ├── Modal.tsx
+│   │       ├── Pagination.tsx
+│   │       ├── PopupMenu.tsx
+│   │       ├── reacttable.css
+│   │       ├── ReactTable.tsx
+│   │       ├── Select.tsx
+│   │       ├── StatCard.tsx
+│   │       ├── Table.tsx
+│   │       ├── TailwindSwitch.tsx
+│   │       └── TimeRangeSelector.tsx
+│   ├── features  extra features for pages extra functionality
+│   │   ├── Cameras
+│   │   │   ├── AddCameraModal.tsx  
+│   │   │   ├── CameraCard.tsx       list of camera beside sidebar
+│   │   │   ├── EditCameraModal.tsx  same as add camera but with modification
+│   │   │   ├── LiveFeed.tsx       handles feed in mjpeg
+│   │   │   └── SettingToggle.tsx  change in memory cache 
+│   │   ├── Dashboard
+│   │   │   ├── HeatmapCalendar_backup.tsx  extra 
+│   │   │   └── HeatmapCalendar.tsx
+│   │   ├── DetectionTab
+│   │   │   └── DetTab.tsx
+│   │   ├── Persons       person tracker page functions
+│   │   │   ├── CustomNode.tsx
+│   │   │   └── MeetingCard.tsx
+│   │   ├── services
+│   │   │   └── dashboardService.ts
+│   │   └── Subjects
+│   │       ├── AddImg.tsx
+│   │       ├── AddSubjectModal.tsx
+│   │       ├── EditSubjectModal.tsx
+│   │       ├── SubjectCard.tsx
+│   │       ├── SubjectFilters.tsx
+│   │       └── types.ts
+│   ├── hooks
+│   │   ├── useSubjectList.ts
+│   │   └── useTimeRange.ts
+│   ├── index.css                mostly tailwind
+│   ├── main.tsx                 main type script , with auth route 
+│   ├── pages                   pages of dashboard there are 5 pages 
+│   │   ├── Analysis.tsx
+│   │   ├── CameraManager.tsx
+│   │   ├── Dashboard_backup.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── DetectionTable.tsx    
+│   │   ├── newDashboard.tsx
+│   │   ├── PersonTracker.tsx
+│   │   └── SubjectManager.tsx
+│   ├── routes.tsx              endpoint to app link routes
+│   ├── utils                   util for centralizing logic in one place 
+│   │   ├── ImagePreview.tsx
+│   │   ├── mockData.ts
+│   │   ├── pagination.tsx
+│   │   ├── socket.ts
+│   │   └── time.tsx
+│   └── vite-env.d.ts
+├── tailwind.config.js
+├── tree.txt
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
 
-14 directories, 46 files
+20 directories, 81 files
